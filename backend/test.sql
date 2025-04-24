@@ -1,0 +1,1 @@
+SELECT *from  gestion_cni_utilisateur
