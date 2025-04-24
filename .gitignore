@@ -1,0 +1,25 @@
+# Environnement virtuel
+env/
+venv/
+
+# Fichiers Python compilés
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Fichiers de logs
+*.log
+
+# Fichier d’environnement
+.env
+
+# Base de données SQLite (si jamais tu en utilises)
+*.sqlite3
+
+
+.vscode/
+.idea/
+
+# Fichiers de système d'exploitation
+.DS_Store
+Thumbs.db
