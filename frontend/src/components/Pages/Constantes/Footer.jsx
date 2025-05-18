@@ -9,40 +9,74 @@ const Footer = () => {
         {/* Partners Section */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-700 mb-6">Nos partenaires</h2>
-          <div className="flex justify-between items-center">
-            {/* Ecobank logo on the left */}
-            <div className="flex items-center justify-center">
-              <img 
-                src="/ecobank.png" 
-                alt="Ecobank logo" 
-                className="max-h-24 object-contain"
-              />
-            </div>
-            
-            {/* Simandou, Orange and MTN logos on the right */}
-            <div className="flex gap-8 items-center">
-              <div className="flex items-center justify-center">
+          <div className="overflow-x-auto pb-4">
+            <div className="flex justify-between items-center min-w-max px-4 md:px-8 lg:px-12">
+              {/* Ecobank logo */}
+              <div className="flex items-center justify-center mx-2 md:mx-3">
+                <img 
+                  src="/ecobank.png" 
+                  alt="Ecobank logo" 
+                  className="max-h-24 object-contain"
+                />
+              </div>
+              
+              {/* Simandou logo */}
+              <div className="flex items-center justify-center mx-2 md:mx-3">
                 <img 
                   src="/simandou2040.jpg" 
                   alt="Simandou logo" 
                   className="max-h-24 object-contain"
                 />
               </div>
-              <div className="flex items-center justify-center">
+              
+              {/* Orange logo */}
+              <div className="flex items-center justify-center mx-2 md:mx-3">
                 <img 
                   src="/orange.jpg" 
                   alt="Orange logo" 
                   className="max-h-24 object-contain"
                 />
               </div>
-              <div className="flex items-center justify-center">
+              
+              {/* MTN logo */}
+              <div className="flex items-center justify-center mx-2 md:mx-3">
                 <img 
                   src="/mtn.jpg" 
                   alt="MTN logo" 
                   className="max-h-24 object-contain"
                 />
               </div>
+              
+              {/* UNC logo */}
+              <div className="flex items-center justify-center mx-2 md:mx-3">
+                <img 
+                  src="/unc.jpg" 
+                  alt="UNC logo" 
+                  className="max-h-24 object-contain"
+                />
+              </div>
+              
+              {/* Jeunes logo */}
+              <div className="flex items-center justify-center mx-2 md:mx-3">
+                <img 
+                  src="/jeunes.jpg" 
+                  alt="Jeunes logo" 
+                  className="max-h-24 object-contain"
+                />
+              </div>
+              
+              {/* Enfants logo */}
+              <div className="flex items-center justify-center mx-2 md:mx-3">
+                <img 
+                  src="/enfants.jpg" 
+                  alt="Enfants logo" 
+                  className="max-h-24 object-contain"
+                />
+              </div>
             </div>
+          </div>
+          <div className="flex justify-center mt-2">
+            <div className="w-16 h-1 bg-gray-300 rounded-full"></div>
           </div>
         </div>
 

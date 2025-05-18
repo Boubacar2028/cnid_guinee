@@ -53,7 +53,7 @@ const PortalsSection = () => {
       buttonBg: 'bg-blue-500',
       buttonHover: 'hover:bg-blue-600',
       delay: '300',
-      path: '/login'
+      path: '/portail-agents'
     },
     {
       title: 'Portail Administrateur',
@@ -65,7 +65,7 @@ const PortalsSection = () => {
       buttonBg: 'bg-purple-500',
       buttonHover: 'hover:bg-purple-600',
       delay: '600',
-      path: '/login'
+      path: '/portail-administrateur'
     },
   ];
 
@@ -79,10 +79,10 @@ const PortalsSection = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Colonne verte à gauche - visible uniquement sur desktop */}
           <div className="hidden lg:block lg:w-1/4 bg-gradient-to-b from-green-500 to-teal-600 text-white p-8 rounded-lg shadow-lg">
-            <h2 className="text-3xl font-bold mb-6">NOS SERVICES</h2>
+            <h2 className="text-3xl font-bold mb-6">LES PORTAILS</h2>
             <div className="h-1 w-20 bg-white mb-6"></div>
-            <h3 className="text-2xl font-bold mb-4">Nous aidons votre entreprise à se développer</h3>
-            <p className="text-lg">Accédez à nos différents portails pour effectuer vos démarches administratives en ligne.</p>
+            <h3 className="text-2xl font-bold mb-4">Tous les citoyens font leur demande au portail citoyens</h3>
+            <p className="text-lg">Seul les agents de l'Etat ont accès aux deux autres portails</p>
           </div>
 
           {/* Titre visible uniquement sur mobile et tablette */}
