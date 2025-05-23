@@ -1,10 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CitoyenHeader from './CitoyenHeader';
+import MapView from '../../Common/MapView';
 
 const BiometriePage = () => {
+  const [selectedCommune, setSelectedCommune] = useState("");
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
+  
+  // Afficher l'alerte de carte lorsque l'utilisateur sélectionne un créneau horaire
+  useEffect(() => {
+    if (selectedDate && selectedTime && selectedCommune) {
+      setShowMapAlert(true);
+    }
+  }, [selectedDate, selectedTime, selectedCommune]);
   const [currentWeekIndex, setCurrentWeekIndex] = useState(0); // Index de la semaine actuellement affichée
+  
+  // Liste des communes disponibles pour la biométrie avec leurs coordonnées GPS
+  const communes = [
+    { id: "ratoma", name: "Ratoma", address: "Commissariat central de Nongo, à coté du stade", position: [9.621584287382367, -13.628781276449926] },
+    { id: "ratoma2", name: "Ratoma", address: "Mairie de Ratoma, à Taouyah", position: [9.581608951397286, -13.658828711332744] },
+    { id: "matoto", name: "Matoto", address: "Mairie de Matoto", position: [9.602229751801728, -13.601724365742529] }
+  ];
+  
+  // État pour afficher l'alerte de carte
+  const [showMapAlert, setShowMapAlert] = useState(false);
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     const today = new Date();
     // Trouver le prochain lundi
@@ -118,6 +137,22 @@ const BiometriePage = () => {
             <div className="border-b border-gray-200 pb-4 mb-6">
               <h1 className="text-2xl font-bold text-gray-900">Prendre un rendez-vous</h1>
               <p className="text-gray-600 mt-2">Choisissez une date et un horaire pour votre rendez-vous biométrique</p>
+              
+              {/* Sélection de la commune */}
+              <div className="mt-4">
+                <label htmlFor="commune-select" className="block text-sm font-medium text-gray-700 mb-1">Sélectionnez votre centre de biométrie</label>
+                <select 
+                  id="commune-select"
+                  value={selectedCommune}
+                  onChange={(e) => setSelectedCommune(e.target.value)}
+                  className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                >
+                  <option value="">-- Choisissez une commune --</option>
+                  {communes.map(commune => (
+                    <option key={commune.id} value={commune.id}>{commune.name} - {commune.address}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Navigation des semaines */}
@@ -207,21 +242,27 @@ const BiometriePage = () => {
               </div>
             )}
 
+
+
+
+            
             {/* Bouton de validation */}
-            {selectedDate && selectedTime && (
+            {selectedDate && selectedTime && selectedCommune && (
               <div className="mt-8 border-t border-gray-200 pt-6">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h4 className="font-medium text-blue-800 mb-2">Récapitulatif du rendez-vous</h4>
                     <p className="text-blue-600">
-                      Le {selectedDate.getDate()} {selectedDate.toLocaleString('fr-FR', { month: 'long' })} à {selectedTime}
+                      <span className="block"><strong>Centre :</strong> {communes.find(c => c.id === selectedCommune)?.name}</span>
+                      <span className="block"><strong>Date :</strong> Le {selectedDate.getDate()} {selectedDate.toLocaleString('fr-FR', { month: 'long' })}</span>
+                      <span className="block"><strong>Heure :</strong> {selectedTime}</span>
                     </p>
                   </div>
                   <div className="mt-4 sm:mt-0">
                     <button
                       onClick={() => {
                         // Ajouter ici la logique pour valider le rendez-vous
-                        alert('Rendez-vous confirmé !');
+                        alert(`Rendez-vous confirmé au centre de ${communes.find(c => c.id === selectedCommune)?.name} le ${selectedDate.getDate()} ${selectedDate.toLocaleString('fr-FR', { month: 'long' })} à ${selectedTime} !`);
                       }}
                       className="w-full sm:w-auto bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium text-lg"
                     >
@@ -233,13 +274,29 @@ const BiometriePage = () => {
             )}
           </div>
 
+          {/* Carte des centres de biométrie - Positionée après la confirmation */}
+          {selectedDate && selectedTime && selectedCommune && (
+            <div className="mt-8 mb-8 bg-white rounded-lg shadow-lg p-6 md:p-8 container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
+              <h2 className="text-xl font-semibold text-gray-900 mb-3">Itinéraire vers le centre de biométrie</h2>
+              <p className="text-gray-600 mb-4 max-w-4xl">Voici l'emplacement du centre où vous devez vous rendre pour votre rendez-vous. Utilisez les contrôles pour alterner entre vue satellite et plan, et cliquez sur "Itinéraire" pour obtenir des directions.</p>
+              <div className="h-72 md:h-96 lg:h-[30rem] w-full overflow-hidden rounded-lg shadow-lg border border-gray-200">
+                <MapView 
+                  centers={communes} 
+                  selectedCenterId={selectedCommune} 
+                  onCenterClick={(centerId) => setSelectedCommune(centerId)}
+                />
+              </div>
+              <p className="text-sm text-gray-500 mt-2 italic">Astuce : Cliquez sur les marqueurs pour voir les détails des centres. Le bouton "Itinéraire" vous permettra d'accéder à Google Maps.</p>
+            </div>
+          )}
+
           {/* Informations sur les données biométriques */}
           <div className="mt-8 bg-white rounded-lg shadow-lg p-6 md:p-8 space-y-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Cadre légal */}
             <div className="lg:col-span-2">
-              <h2 className="text-xl font-semibold text-gray-900 mb-3">Cadre légal de la biométrie</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-3">Explication sur les données biométrique</h2>
               <p className="text-gray-600">
-                La collecte et le traitement des données biométriques sont encadrés par le Règlement Général sur la Protection des Données (RGPD) et la loi informatique
+                La collecte et le traitement des données biométriques sont encadrés par le Règlement Général sur la Protection des Données  et la loi informatique
                 et Libertés. Ces données sont considérées comme sensibles et bénéficient d'une protection renforcée.
               </p>
             </div>
@@ -277,7 +334,7 @@ const BiometriePage = () => {
                   <svg className="h-6 w-6 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span>Les données sont conservées pendant la durée de validité de la carte, plus une période de 15 ans.</span>
+                  <span>Les données sont conservées pendant la durée de validité de la carte, plus une période de 10 ans.</span>
                 </li>
               </ul>
             </div>
@@ -319,7 +376,7 @@ const BiometriePage = () => {
                 <div className="ml-3">
                   <h3 className="text-sm font-medium text-yellow-800">Important</h3>
                   <p className="text-sm text-yellow-700 mt-1">
-                    La collecte des données biométriques est obligatoire pour l'établissement d'une carte nationale d'identité. Ces données sont essentielles pour garantir la sécurité et
+                    La collecte des données biométriques est obligatoire pour l'établissement d'une carte nationale d'identité Guinéenne. Ces données sont essentielles pour garantir la sécurité et
                     l'authenticité du document.
                   </p>
                 </div>

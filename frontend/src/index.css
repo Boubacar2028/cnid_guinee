@@ -1,6 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import "leaflet/dist/leaflet.css";
+
 
 /* Animation pour le texte Bienvenu */
 @keyframes fadeInScale {
