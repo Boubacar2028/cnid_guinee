@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MenuIcon, X, Home, User, Search, Globe } from 'lucide-react';
+import { MenuIcon, X, Home, User, Search, Globe, LogOut } from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFacebook, faTwitter } from '@fortawesome/free-brands-svg-icons';
 import { NAV_LINKS } from '../../constants';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -11,6 +11,10 @@ const Header = () => {
   const [displayedWords, setDisplayedWords] = useState([]);
   const [isAnimating, setIsAnimating] = useState(true);
   const [language, setLanguage] = useState('fr'); // fr pour français, en pour anglais
+  
+  // Utiliser le hook useLocation pour déterminer si l'utilisateur est dans le portail citoyen
+  const location = useLocation();
+  const isLoggedIn = location.pathname.includes('/portail-citoyens');
   
   const phrases = [
     "Une identité sécurisée pour chaque citoyen 🇬🇳",
@@ -69,19 +73,26 @@ const Header = () => {
               </div>
             </div>
 
-            {/* Bloc central : slogan animé (visible en md+) */}
-            <div className="hidden md:flex flex-1 justify-center">
+            {/* Bloc central : slogan animé (visible uniquement sur grands écrans) */}
+            <div className="hidden lg:flex flex-1 justify-center">
               <p className="text-base md:text-lg italic text-gray-600 min-h-[2.5rem] text-center font-medium">
                 {displayedWords.join(' ')}
               </p>
             </div>
 
-            {/* Bloc droit : Connexion + Réseaux sociaux + Sélecteur de langue */}
+            {/* Bloc droit : Connexion/Déconnexion + Réseaux sociaux + Sélecteur de langue */}
             <div className="flex items-center gap-4">
-              <a href="#portals" className="text-base flex items-center gap-1 hover:text-green-700 transition-colors bg-gray-200 hover:bg-gray-300 px-3 py-1.5 rounded-md font-medium">
-                <User size={18} />
-                Se connecter
-              </a>
+              {isLoggedIn ? (
+                <Link to="/" className="text-base flex items-center gap-1 hover:text-green-700 transition-colors bg-gray-200 hover:bg-gray-300 px-3 py-1.5 rounded-md font-medium">
+                  <LogOut size={18} />
+                  <span className="hidden sm:inline">Se déconnecter</span>
+                </Link>
+              ) : (
+                <Link to="/portail-citoyens" className="text-base flex items-center gap-1 hover:text-green-700 transition-colors bg-gray-200 hover:bg-gray-300 px-3 py-1.5 rounded-md font-medium">
+                  <User size={18} />
+                  <span className="hidden sm:inline">Se connecter</span>
+                </Link>
+              )}
               <div className="flex gap-3">
                 <a href="#" className="hover:text-blue-600 text-xl">
                   <FontAwesomeIcon icon={faFacebook} size="lg" />

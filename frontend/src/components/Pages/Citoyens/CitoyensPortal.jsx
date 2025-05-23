@@ -1,30 +1,63 @@
 import React from 'react';
+import CitoyenHeader from './CitoyenHeader';
+import { Link, useNavigate } from 'react-router-dom';
 
 const CitoyensPortal = () => {
+  const navigate = useNavigate();
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-10 rounded-lg shadow-xl max-w-2xl w-full text-center">
-        <h1 className="text-3xl font-bold text-green-600 mb-6">Portail Citoyens</h1>
-        <div className="h-1 w-32 bg-green-500 mx-auto mb-8"></div>
-        <div className="flex items-center justify-center mb-8">
-          <div className="bg-green-100 p-4 rounded-full">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
+    <>
+      <CitoyenHeader />
+      <div className="min-h-screen bg-gray-100 pt-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          {/* En-tête du tableau de bord */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Tableau de bord</h1>
+              <p className="text-gray-600 mt-1">Bienvenue, Boubacar Bah</p>
+            </div>
+            <button
+              onClick={() => navigate('/nouvelle-demande')}
+              className="w-full sm:w-auto bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center justify-center sm:justify-start"
+            >
+              <span className="mr-1">+</span> Nouvelle demande
+            </button>
+          </div>
+
+          {/* Contenu principal - deux colonnes */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-2 sm:px-0">
+            {/* Colonne de gauche - Mes demandes */}
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-medium text-gray-900">Mes demandes</h2>
+                <Link to="/nouvelle-demande" className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                  + Nouvelle demande
+                </Link>
+              </div>
+              
+              <div className="p-6 text-center">
+                <p className="text-gray-500">Aucune demande</p>
+              </div>
+
+            </div>
+
+            {/* Colonne de droite - Notifications */}
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-medium text-gray-900">Notifications</h2>
+                <button className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                  Tout marquer comme lu
+                </button>
+              </div>
+              
+              <div className="p-6 text-center">
+                <p className="text-gray-500">Aucune notification</p>
+              </div>
+            </div>
           </div>
         </div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">En cours de développement</h2>
-        <p className="text-gray-600 mb-8">
-          Cette section du portail est actuellement en cours de développement. 
-          Nous travaillons activement pour vous offrir un service de qualité pour vos démarches administratives en ligne.
-        </p>
-        <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-          <p className="text-green-800 font-medium">
-            Revenez bientôt pour découvrir les nouvelles fonctionnalités!
-          </p>
-        </div>
       </div>
-    </div>
+    </>
   );
 };
 
