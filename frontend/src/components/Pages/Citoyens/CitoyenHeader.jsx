@@ -76,9 +76,6 @@ const CitoyenHeader = () => {
                   <Link to="/profil" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                     Mon profil
                   </Link>
-                  <Link to="/parametres" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    Paramètres
-                  </Link>
                   <div className="border-t border-gray-100"></div>
                   <Link to="/" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                     Se déconnecter

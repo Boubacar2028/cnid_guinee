@@ -15,6 +15,7 @@ import BiometriePage from './components/Pages/Citoyens/BiometriePage';
 import NouvelleDemandePage from './components/Pages/Citoyens/NouvelleDemandePage';
 import HistoriquePage from './components/Pages/Citoyens/HistoriquePage';
 import AidePage from './components/Pages/Citoyens/AidePage';
+import ProfilePage from './components/Pages/Citoyens/ProfilePage';
 import AgentPortal from './components/Pages/Agent/AgentPortal';
 import AdminPortal from './components/Pages/Administrateur/AdminPortal';
 
@@ -27,7 +28,8 @@ const AppContent = () => {
     '/tableau-de-bord',
     '/nouvelle-demande',
     '/historique',
-    '/aide'
+    '/aide',
+    '/profil'
   ];
   const isInCitoyenSection = citoyenPaths.some(path => location.pathname.includes(path));
 
@@ -53,6 +55,7 @@ const AppContent = () => {
           <Route path="/nouvelle-demande" element={<NouvelleDemandePage />} />
           <Route path="/historique" element={<HistoriquePage />} />
           <Route path="/aide" element={<AidePage />} />
+          <Route path="/profil" element={<ProfilePage />} />
           <Route path="/portail-agents" element={<AgentPortal />} />
           <Route path="/portail-administrateur" element={<AdminPortal />} />
         </Routes>
