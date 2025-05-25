@@ -8,7 +8,7 @@ const CitoyensPortal = () => {
   return (
     <>
       <CitoyenHeader />
-      <div className="min-h-screen bg-gray-100 pt-20 px-4 sm:px-6 lg:px-8">
+      <div className="bg-gray-100 pt-14 sm:pt-16 pb-8 px-4 sm:px-6 lg:px-8 min-h-[calc(100vh-60px)]">
         <div className="max-w-7xl mx-auto">
           {/* En-tête du tableau de bord */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6">
@@ -57,35 +57,63 @@ const CitoyensPortal = () => {
           </div>
 
           {/* Section Guide des démarches et Rendez-vous */}
-          <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
             {/* Guide des démarches - prend 2/3 de l'espace sur desktop */}
             <div className="lg:col-span-2">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Guide des démarches</h2>
+              <h2 className="text-lg font-medium text-gray-900 mb-3">Guide des démarches</h2>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {/* Première demande */}
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                  <h3 className="font-medium text-blue-800 mb-2">Première demande</h3>
-                  <p className="text-sm text-blue-700">Comment effectuer votre première demande de carte d'identité</p>
-                </div>
+                <Link to="/aide#premiere-demande" className="block transition-transform duration-300 hover:scale-105 hover:shadow-md active:bg-blue-200">
+                  <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-100 h-full hover:bg-blue-100 transition-colors duration-300">
+                    <h3 className="font-medium text-blue-800 mb-2 flex items-center">
+                      Première demande
+                      <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                    </h3>
+                    <p className="text-sm text-blue-700">Comment effectuer votre première demande de carte d'identité</p>
+                  </div>
+                </Link>
                 
                 {/* Renouvellement */}
-                <div className="bg-green-50 p-4 rounded-lg border border-green-100">
-                  <h3 className="font-medium text-green-800 mb-2">Renouvellement</h3>
-                  <p className="text-sm text-green-700">Procédure pour renouveler votre carte d'identité existante</p>
-                </div>
+                <Link to="/aide#renouvellement" className="block transition-transform duration-300 hover:scale-105 hover:shadow-md active:bg-green-200">
+                  <div className="bg-green-50 p-3 sm:p-4 rounded-lg border border-green-100 h-full hover:bg-green-100 transition-colors duration-300">
+                    <h3 className="font-medium text-green-800 mb-2 flex items-center">
+                      Renouvellement
+                      <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                    </h3>
+                    <p className="text-sm text-green-700">Procédure pour renouveler votre carte d'identité existante</p>
+                  </div>
+                </Link>
                 
                 {/* Perte ou vol */}
-                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
-                  <h3 className="font-medium text-yellow-800 mb-2">Perte ou vol</h3>
-                  <p className="text-sm text-yellow-700">Démarches à suivre en cas de perte ou de vol de votre carte</p>
-                </div>
+                <Link to="/aide#perte-vol" className="block transition-transform duration-300 hover:scale-105 hover:shadow-md active:bg-yellow-200">
+                  <div className="bg-yellow-50 p-3 sm:p-4 rounded-lg border border-yellow-100 h-full hover:bg-yellow-100 transition-colors duration-300">
+                    <h3 className="font-medium text-yellow-800 mb-2 flex items-center">
+                      Perte ou vol
+                      <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                    </h3>
+                    <p className="text-sm text-yellow-700">Démarches à suivre en cas de perte ou de vol de votre carte</p>
+                  </div>
+                </Link>
                 
                 {/* Retirer ma carte */}
-                <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
-                  <h3 className="font-medium text-purple-800 mb-2">Retirer ma carte</h3>
-                  <p className="text-sm text-purple-700">Comment et où récupérer votre nouvelle carte d'identité</p>
-                </div>
+                <Link to="/aide#retirer-carte" className="block transition-transform duration-300 hover:scale-105 hover:shadow-md active:bg-purple-200">
+                  <div className="bg-purple-50 p-3 sm:p-4 rounded-lg border border-purple-100 h-full hover:bg-purple-100 transition-colors duration-300">
+                    <h3 className="font-medium text-purple-800 mb-2 flex items-center">
+                      Retirer ma carte
+                      <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                    </h3>
+                    <p className="text-sm text-purple-700">Comment et où récupérer votre nouvelle carte d'identité</p>
+                  </div>
+                </Link>
               </div>
             </div>
             

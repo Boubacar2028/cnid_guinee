@@ -7,7 +7,7 @@ const CitoyenHeader = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   return (
-    <header className="bg-white shadow-sm py-3 px-4 fixed top-0 w-full z-50">
+    <header className="bg-white shadow-sm py-2 sm:py-3 px-4 fixed top-0 w-full z-50">
       <div className="container mx-auto">
         <div className="flex items-center justify-between">
           {/* Logo et Navigation links */}
@@ -92,7 +92,7 @@ const CitoyenHeader = () => {
             <Link to="/biometrie" className="block py-2 text-gray-700 hover:text-blue-600 font-medium">
               Biométrie
             </Link>
-            <Link to="/tableau-de-bord" className="block py-2 text-gray-700 hover:text-blue-600 font-medium">
+            <Link to="/portail-citoyens" className="block py-2 text-gray-700 hover:text-blue-600 font-medium">
               Tableau de bord
             </Link>
             <Link to="/nouvelle-demande" className="block py-2 text-gray-700 hover:text-blue-600 font-medium">
