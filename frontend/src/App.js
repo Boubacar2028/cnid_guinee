@@ -29,7 +29,8 @@ const AppContent = () => {
     '/nouvelle-demande',
     '/historique',
     '/aide',
-    '/profil'
+    '/profil',
+    '/portail-agents'
   ];
   const isInCitoyenSection = citoyenPaths.some(path => location.pathname.includes(path));
 
@@ -59,7 +60,7 @@ const AppContent = () => {
           <Route path="/portail-agents" element={<AgentPortal />} />
           <Route path="/portail-administrateur" element={<AdminPortal />} />
         </Routes>
-        <Footer />
+        {!isInCitoyenSection && <Footer />}
       </div>
   );
 };

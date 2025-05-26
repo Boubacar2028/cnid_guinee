@@ -116,13 +116,11 @@ const PortalsSection = () => {
                 </div>
                 <h3 className={`text-2xl font-bold mb-3 ${portal.color} transition-all duration-300 group-hover:scale-105`}>{portal.title}</h3>
                 <p className="text-gray-700 text-lg mb-6 transition-all duration-300 group-hover:text-gray-900">{portal.description}</p>
-                <Link to={portal.path}>
-                  <button 
-                    className={`${portal.buttonBg} ${portal.buttonHover} text-white font-medium py-2 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 relative overflow-hidden group-hover:shadow-lg`}
-                  >
-                    <span className="relative z-10">Accéder</span>
-                    <span className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300 animate-pulse"></span>
-                  </button>
+                <Link 
+                  to={portal.path}
+                  className={`${portal.buttonBg} ${portal.buttonHover} text-white font-medium py-3 px-8 rounded-lg inline-block w-full md:w-auto transition-all duration-300 hover:shadow-lg active:scale-95 touch-manipulation`}
+                >
+                  Accéder
                 </Link>
               </div>
             ))}
