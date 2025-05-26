@@ -18,7 +18,7 @@ const CitoyensPortal = () => {
             </div>
             <button
               onClick={() => navigate('/nouvelle-demande')}
-              className="w-full sm:w-auto bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center justify-center sm:justify-start"
+              className="w-full sm:w-auto bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 flex items-center justify-center sm:justify-start"
             >
               <span className="mr-1">+</span> Nouvelle demande
             </button>
@@ -30,7 +30,7 @@ const CitoyensPortal = () => {
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
                 <h2 className="text-lg font-medium text-gray-900">Mes demandes</h2>
-                <Link to="/nouvelle-demande" className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                <Link to="/nouvelle-demande" className="text-green-600 hover:text-green-700 text-sm font-medium">
                   + Nouvelle demande
                 </Link>
               </div>
@@ -45,7 +45,7 @@ const CitoyensPortal = () => {
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
                 <h2 className="text-lg font-medium text-gray-900">Notifications</h2>
-                <button className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                <button className="text-red-600 hover:text-red-700 text-sm font-medium">
                   Tout marquer comme lu
                 </button>
               </div>
@@ -65,14 +65,14 @@ const CitoyensPortal = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {/* Première demande */}
                 <Link to="/aide#premiere-demande" className="block transition-transform duration-300 hover:scale-105 hover:shadow-md active:bg-blue-200">
-                  <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-100 h-full hover:bg-blue-100 transition-colors duration-300">
-                    <h3 className="font-medium text-blue-800 mb-2 flex items-center">
+                  <div className="bg-red-50 p-3 sm:p-4 rounded-lg border border-red-100 h-full hover:bg-red-100 transition-colors duration-300">
+                    <h3 className="font-medium text-red-800 mb-2 flex items-center">
                       Première demande
                       <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                       </svg>
                     </h3>
-                    <p className="text-sm text-blue-700">Comment effectuer votre première demande de carte d'identité</p>
+                    <p className="text-sm text-red-700">Comment effectuer votre première demande de carte d'identité</p>
                   </div>
                 </Link>
                 
@@ -104,14 +104,14 @@ const CitoyensPortal = () => {
                 
                 {/* Retirer ma carte */}
                 <Link to="/aide#retirer-carte" className="block transition-transform duration-300 hover:scale-105 hover:shadow-md active:bg-purple-200">
-                  <div className="bg-purple-50 p-3 sm:p-4 rounded-lg border border-purple-100 h-full hover:bg-purple-100 transition-colors duration-300">
-                    <h3 className="font-medium text-purple-800 mb-2 flex items-center">
+                  <div className="bg-red-50 p-3 sm:p-4 rounded-lg border border-red-100 h-full hover:bg-red-100 transition-colors duration-300">
+                    <h3 className="font-medium text-red-800 mb-2 flex items-center">
                       Retirer ma carte
                       <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                       </svg>
                     </h3>
-                    <p className="text-sm text-purple-700">Comment et où récupérer votre nouvelle carte d'identité</p>
+                    <p className="text-sm text-red-700">Comment et où récupérer votre nouvelle carte d'identité</p>
                   </div>
                 </Link>
               </div>

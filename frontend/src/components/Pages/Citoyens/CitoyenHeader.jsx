@@ -15,7 +15,7 @@ const CitoyenHeader = () => {
             {/* Bouton menu mobile */}
             <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="mr-2 text-gray-700 hover:text-blue-600 md:hidden"
+              className="mr-2 text-gray-700 hover:text-green-600 md:hidden"
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -27,21 +27,21 @@ const CitoyenHeader = () => {
             
             {/* Navigation links - desktop */}
             <nav className="hidden md:flex items-center space-x-4 lg:space-x-8">
-              <Link to="/biometrie" className="text-gray-700 hover:text-blue-600 font-medium text-sm lg:text-base">
+              <Link to="/biometrie" className="text-gray-700 hover:text-red-600 font-medium text-sm lg:text-base">
                 Biométrie
               </Link>
-              <Link to="/portail-citoyens" className="text-gray-700 hover:text-blue-600 font-medium text-sm lg:text-base">
+              <Link to="/portail-citoyens" className="text-gray-700 hover:text-green-600 font-medium text-sm lg:text-base">
                 Tableau de bord
               </Link>
               
-              <Link to="/nouvelle-demande" className="text-gray-700 hover:text-blue-600 font-medium text-sm lg:text-base">
+              <Link to="/nouvelle-demande" className="text-gray-700 hover:text-yellow-600 font-medium text-sm lg:text-base">
                 Nouvelle demande
               </Link>
       
-              <Link to="/historique" className="text-gray-700 hover:text-blue-600 font-medium text-sm lg:text-base">
+              <Link to="/historique" className="text-gray-700 hover:text-red-600 font-medium text-sm lg:text-base">
                 Historique
               </Link>
-              <Link to="/aide" className="text-gray-700 hover:text-blue-600 font-medium text-sm lg:text-base">
+              <Link to="/aide" className="text-gray-700 hover:text-green-600 font-medium text-sm lg:text-base">
                 Aide
               </Link>
             </nav>
@@ -50,7 +50,7 @@ const CitoyenHeader = () => {
           {/* User profile and notifications */}
           <div className="flex items-center space-x-2 md:space-x-4">
             {/* Notification bell */}
-            <button className="relative p-1 text-gray-700 hover:text-blue-600 transition-colors">
+            <button className="relative p-1 text-gray-700 hover:text-yellow-600 transition-colors">
               <Bell size={20} />
               <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
             </button>
@@ -61,7 +61,7 @@ const CitoyenHeader = () => {
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                 className="flex items-center space-x-1 md:space-x-2 focus:outline-none"
               >
-                <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-medium">
+                <div className="h-8 w-8 rounded-full bg-red-600 flex items-center justify-center text-white font-medium">
                   BB
                 </div>
                 <span className="hidden sm:inline text-gray-700 font-medium text-sm md:text-base">Boubacar Bah</span>
@@ -89,19 +89,19 @@ const CitoyenHeader = () => {
         {/* Menu mobile */}
         {isMobileMenuOpen && (
           <nav className="md:hidden mt-4 pb-2 border-t border-gray-100 pt-2">
-            <Link to="/biometrie" className="block py-2 text-gray-700 hover:text-blue-600 font-medium">
+            <Link to="/biometrie" className="block py-2 text-gray-700 hover:text-red-600 font-medium">
               Biométrie
             </Link>
-            <Link to="/portail-citoyens" className="block py-2 text-gray-700 hover:text-blue-600 font-medium">
+            <Link to="/portail-citoyens" className="block py-2 text-gray-700 hover:text-green-600 font-medium">
               Tableau de bord
             </Link>
-            <Link to="/nouvelle-demande" className="block py-2 text-gray-700 hover:text-blue-600 font-medium">
+            <Link to="/nouvelle-demande" className="block py-2 text-gray-700 hover:text-yellow-600 font-medium">
               Nouvelle demande
             </Link>
-            <Link to="/aide" className="block py-2 text-gray-700 hover:text-blue-600 font-medium">
+            <Link to="/aide" className="block py-2 text-gray-700 hover:text-green-600 font-medium">
               Aide
             </Link>
-            <Link to="/historique" className="block py-2 text-gray-700 hover:text-blue-600 font-medium">
+            <Link to="/historique" className="block py-2 text-gray-700 hover:text-red-600 font-medium">
               Historique
             </Link>
           </nav>

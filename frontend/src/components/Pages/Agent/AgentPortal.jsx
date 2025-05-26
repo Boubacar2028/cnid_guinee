@@ -1,57 +1,55 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import PasswordChangeModal from './Modals/PasswordChangeModal';
+import BiometricModal from './Modals/BiometricModal';
+import AgentHeader from './AgentHeader';
+import DemandesSection from './Sections/DemandesSection';
 
-const AgentHeader = () => {
-  return (
-    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-        <div className="flex justify-between items-center">
-          {/* Logo et titre */}
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="flex items-center">
-                <div className="h-10 w-10 bg-green-600 rounded-md flex items-center justify-center">
-                  <img src="/emblème.png" alt="CNI Guinée" className="h-8 w-8" />
-                </div>
-                <div className="ml-3">
-                  <div className="text-lg font-semibold text-gray-900">CNID Guinée</div>
-                  <div className="text-xs text-gray-500">Portail Agent</div>
-                </div>
-              </div>
-            </div>
-            {/* Badge de notifications */}
-            <div className="ml-6 bg-yellow-50 px-3 py-1 rounded-full border border-yellow-200">
-              <span className="text-sm text-yellow-700 font-medium">0 demandes en attente</span>
-            </div>
-          </div>
 
-          {/* Boutons et profil */}
-          <div className="flex items-center space-x-4">
-            <button className="text-gray-700 hover:text-gray-900 flex items-center text-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-              </svg>
-              Changer le mot de passe
-            </button>
-            <div className="flex items-center">
-              <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
-                FC
-              </div>
-              <div className="ml-2 text-sm">
-                <div className="font-medium text-gray-900">Fatounata CAMARA</div>
-                <div className="text-xs text-gray-500">Matr AG00234</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </header>
-  );
-};
 
 const AgentPortal = () => {
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showBiometricModal, setShowBiometricModal] = useState(false);
+  const [activeSection, setActiveSection] = useState('dashboard'); // dashboard, demandes
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData({ ...passwordData, [name]: value });
+  };
+  
+  const handleSubmit = () => {
+    // Vérification que les mots de passe correspondent
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      alert("Les mots de passe ne correspondent pas.");
+      return;
+    }
+    
+    // Vérification de la longueur minimale
+    if (passwordData.newPassword.length < 8) {
+      alert("Le mot de passe doit contenir au moins 8 caractères.");
+      return;
+    }
+    
+    // Simuler la mise à jour du mot de passe
+    alert("Mot de passe modifié avec succès!");
+    setShowPasswordModal(false);
+    // Réinitialiser les données du formulaire
+    setPasswordData({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+  };
 
   // Fonction pour détecter si l'appareil est mobile
   const checkDeviceSize = () => {
@@ -73,7 +71,7 @@ const AgentPortal = () => {
   if (isMobile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-        <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full relative overflow-hidden">
           <div className="flex items-center justify-center mb-4 text-red-600">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -86,7 +84,7 @@ const AgentPortal = () => {
           <div className="flex justify-center">
             <button
               onClick={() => navigate('/')}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
             >
               Retour à l'accueil
             </button>
@@ -98,29 +96,58 @@ const AgentPortal = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
-      <AgentHeader />
+      <AgentHeader onOpenPasswordModal={() => setShowPasswordModal(true)} />
+
+      {/* Modal pour la biométrie en attente */}
+      <BiometricModal 
+        isOpen={showBiometricModal} 
+        onClose={() => setShowBiometricModal(false)} 
+      />
+      
+      <PasswordChangeModal 
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        passwordData={passwordData}
+        setPasswordData={setPasswordData}
+        handleSubmit={handleSubmit}
+        showCurrentPassword={showCurrentPassword}
+        setShowCurrentPassword={setShowCurrentPassword}
+        showNewPassword={showNewPassword}
+        setShowNewPassword={setShowNewPassword}
+        showConfirmPassword={showConfirmPassword}
+        setShowConfirmPassword={setShowConfirmPassword}
+      />
       
       {/* Navigation principale */}
       <div className="border-b border-gray-200 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8">
-            <Link to="/portail-agents" className="border-b-2 border-blue-500 py-4 px-1 text-sm font-medium text-blue-600">
+            <button 
+              onClick={() => setActiveSection('dashboard')}
+              className={`border-b-2 ${activeSection === 'dashboard' ? 'border-green-600 text-green-700' : 'border-transparent hover:border-gray-300 text-gray-500 hover:text-gray-700'} py-4 px-1 text-sm font-medium focus:outline-none`}
+            >
               <span className="flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
                 Tableau de bord
               </span>
-            </Link>
-            <Link to="/demandes" className="border-b-2 border-transparent hover:border-gray-300 py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
+            </button>
+            <button 
+              onClick={() => setActiveSection('demandes')}
+              className={`border-b-2 ${activeSection === 'demandes' ? 'border-green-600 text-green-700' : 'border-transparent hover:border-gray-300 text-gray-500 hover:text-gray-700'} py-4 px-1 text-sm font-medium focus:outline-none`}
+            >
               <span className="flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 Demandes
               </span>
-            </Link>
-            <Link to="/biometrie-attente" className="border-b-2 border-transparent hover:border-gray-300 py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
+            </button>
+            <button 
+              onClick={() => setShowBiometricModal(true)}
+              className="border-b-2 border-transparent hover:border-gray-300 py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none"
+            >
               <span className="flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
@@ -128,7 +155,7 @@ const AgentPortal = () => {
                 Biométrie en attente
                 <span className="ml-2 bg-gray-100 text-gray-800 text-xs font-medium px-2 py-0.5 rounded-full">0</span>
               </span>
-            </Link>
+            </button>
           </div>
         </div>
       </div>
@@ -136,14 +163,16 @@ const AgentPortal = () => {
       {/* Contenu principal */}
       <main className="flex-1 py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Titre du tableau de bord */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Tableau de bord</h1>
-            <p className="text-gray-600 mt-1">Vue d'ensemble de vos activités</p>
-            <div className="flex justify-end">
-              <p className="text-sm text-gray-500">Dernière mise à jour: 26/05/2025</p>
-            </div>
-          </div>
+          {activeSection === 'dashboard' ? (
+            <>
+              {/* Titre du tableau de bord */}
+              <div className="mb-6">
+                <h1 className="text-2xl font-bold text-gray-900">Tableau de bord</h1>
+                <p className="text-gray-600 mt-1">Vue d'ensemble de vos activités</p>
+                <div className="flex justify-between mt-2">
+                  <p className="text-sm text-gray-500">Dernière mise à jour: 26/05/2025</p>
+                </div>
+              </div>
 
           {/* Cartes statistiques */}
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
@@ -153,7 +182,7 @@ const AgentPortal = () => {
                 <div className="flex items-center">
                   <div className="flex-shrink-0 bg-red-100 rounded-md p-3">
                     <svg className="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
                     </svg>
                   </div>
                   <div className="ml-5 w-0 flex-1">
@@ -293,6 +322,19 @@ const AgentPortal = () => {
               </div>
             </div>
           </div>
+            </>
+          ) : activeSection === 'demandes' ? (
+            <>
+              {/* Titre de la section Demandes */}
+              <div className="mb-6">
+                <h1 className="text-2xl font-bold text-gray-900">Demandes</h1>
+                <p className="text-gray-600 mt-1">Gestion des demandes de carte d'identité</p>
+              </div>
+              
+              {/* Contenu des demandes */}
+              <DemandesSection />
+            </>
+          ) : null}
         </div>
       </main>
     </div>
