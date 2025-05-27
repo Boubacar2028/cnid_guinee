@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { User, Users, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import '../../../animations.css';
 
 const PortalsSection = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -13,7 +14,7 @@ const PortalsSection = () => {
       },
       {
         root: null,
-        rootMargin: '0px',
+        rootMargin: '-50px',
         threshold: 0.1,
       }
     );
@@ -28,6 +29,9 @@ const PortalsSection = () => {
       }
     };
   }, []);
+  
+  // Effet de survol pour les cartes
+  const [hoveredCard, setHoveredCard] = useState(null);
 
   // Données des portails
   const portals = [

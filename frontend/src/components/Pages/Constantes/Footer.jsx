@@ -1,104 +1,159 @@
 import React from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFacebook, faTwitter, faInstagram, faLinkedin } from '@fortawesome/free-brands-svg-icons';
+import { Mail, Phone, MapPin, ExternalLink, Shield, Heart } from 'lucide-react';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-[#f5f5f5] pt-8 pb-4">
+    <footer className="bg-gradient-to-b from-gray-50 to-gray-100 pt-12 pb-6">
       <div className="container mx-auto px-4">
-        {/* Partners Section */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-700 mb-6">Nos partenaires</h2>
-          <div className="overflow-x-auto pb-4">
-            <div className="flex justify-between items-center min-w-max px-4 md:px-8 lg:px-12">
-              {/* Ecobank logo */}
-              <div className="flex items-center justify-center mx-2 md:mx-3">
-                <img 
-                  src="/ecobank.png" 
-                  alt="Ecobank logo" 
-                  className="max-h-24 object-contain"
-                />
+        {/* Section supérieure avec logo et informations de contact */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+          {/* Logo et description */}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="flex h-8 w-12 rounded overflow-hidden">
+                <div className="w-1/3 bg-red-600"></div>
+                <div className="w-1/3 bg-yellow-400"></div>
+                <div className="w-1/3 bg-green-600"></div>
               </div>
-              
-              {/* Simandou logo */}
-              <div className="flex items-center justify-center mx-2 md:mx-3">
-                <img 
-                  src="/simandou2040.jpg" 
-                  alt="Simandou logo" 
-                  className="max-h-24 object-contain"
-                />
-              </div>
-              
-              {/* Orange logo */}
-              <div className="flex items-center justify-center mx-2 md:mx-3">
-                <img 
-                  src="/orange.jpg" 
-                  alt="Orange logo" 
-                  className="max-h-24 object-contain"
-                />
-              </div>
-              
-              {/* MTN logo */}
-              <div className="flex items-center justify-center mx-2 md:mx-3">
-                <img 
-                  src="/mtn.jpg" 
-                  alt="MTN logo" 
-                  className="max-h-24 object-contain"
-                />
-              </div>
-              
-              {/* UNC logo */}
-              <div className="flex items-center justify-center mx-2 md:mx-3">
-                <img 
-                  src="/unc.jpg" 
-                  alt="UNC logo" 
-                  className="max-h-24 object-contain"
-                />
-              </div>
-              
-              {/* Jeunes logo */}
-              <div className="flex items-center justify-center mx-2 md:mx-3">
-                <img 
-                  src="/jeunes.jpg" 
-                  alt="Jeunes logo" 
-                  className="max-h-24 object-contain"
-                />
-              </div>
-              
-              {/* Enfants logo */}
-              <div className="flex items-center justify-center mx-2 md:mx-3">
-                <img 
-                  src="/enfants.jpg" 
-                  alt="Enfants logo" 
-                  className="max-h-24 object-contain"
-                />
-              </div>
+              <h3 className="text-xl font-bold text-gray-800">CNID Guinée</h3>
+            </div>
+            <p className="text-gray-600 mb-4">
+              La Carte Nationale d'Identité Digitale de Guinée, votre identité sécurisée pour accéder à tous les services de l'administration.
+            </p>
+            <div className="flex space-x-3">
+              <a href="#" className="text-gray-600 hover:text-blue-600 transition-colors">
+                <FontAwesomeIcon icon={faFacebook} size="lg" />
+              </a>
+              <a href="#" className="text-gray-600 hover:text-blue-400 transition-colors">
+                <FontAwesomeIcon icon={faTwitter} size="lg" />
+              </a>
+              <a href="#" className="text-gray-600 hover:text-pink-600 transition-colors">
+                <FontAwesomeIcon icon={faInstagram} size="lg" />
+              </a>
+              <a href="#" className="text-gray-600 hover:text-blue-700 transition-colors">
+                <FontAwesomeIcon icon={faLinkedin} size="lg" />
+              </a>
             </div>
           </div>
-          <div className="flex justify-center mt-2">
-            <div className="w-16 h-1 bg-gray-300 rounded-full"></div>
+
+          {/* Liens rapides */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-300 pb-2">Liens rapides</h3>
+            <ul className="space-y-2">
+              <li>
+                <a href="/actualite" className="text-gray-600 hover:text-green-600 transition-colors flex items-center">
+                  <span className="mr-2">›</span> Actualités
+                </a>
+              </li>
+              <li>
+                <a href="/services" className="text-gray-600 hover:text-green-600 transition-colors flex items-center">
+                  <span className="mr-2">›</span> Nos services
+                </a>
+              </li>
+              <li>
+                <a href="/faq" className="text-gray-600 hover:text-green-600 transition-colors flex items-center">
+                  <span className="mr-2">›</span> FAQ
+                </a>
+              </li>
+              <li>
+                <a href="/contact" className="text-gray-600 hover:text-green-600 transition-colors flex items-center">
+                  <span className="mr-2">›</span> Contact
+                </a>
+              </li>
+              <li>
+                <a href="/portail-citoyens" className="text-gray-600 hover:text-green-600 transition-colors flex items-center">
+                  <span className="mr-2">›</span> Espace citoyen
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-300 pb-2">Contact</h3>
+            <ul className="space-y-3">
+              <li className="flex items-start">
+                <MapPin className="h-5 w-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
+                <span className="text-gray-600">Ministère de l'Administration du Territoire, Kaloum, Conakry, Guinée</span>
+              </li>
+              <li className="flex items-center">
+                <Phone className="h-5 w-5 text-green-600 mr-2 flex-shrink-0" />
+                <span className="text-gray-600">+224 62 12 34 56</span>
+              </li>
+              <li className="flex items-center">
+                <Mail className="h-5 w-5 text-green-600 mr-2 flex-shrink-0" />
+                <span className="text-gray-600">contact@cnid.gouv.gn</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Heures d'ouverture */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-300 pb-2">Heures d'ouverture</h3>
+            <ul className="space-y-2">
+              <li className="flex justify-between">
+                <span className="text-gray-600">Lundi - Vendredi:</span>
+                <span className="text-gray-800 font-medium">8h00 - 16h30</span>
+              </li>
+              <li className="flex justify-between">
+                <span className="text-gray-600">Samedi:</span>
+                <span className="text-gray-800 font-medium">9h00 - 13h00</span>
+              </li>
+              <li className="flex justify-between">
+                <span className="text-gray-600">Dimanche:</span>
+                <span className="text-gray-800 font-medium">Fermé</span>
+              </li>
+            </ul>
+            <div className="mt-4 bg-green-50 border-l-4 border-green-500 p-3 rounded-r-md">
+              <p className="text-sm text-green-800">Service en ligne disponible 24h/24 et 7j/7</p>
+            </div>
           </div>
         </div>
 
-        {/* Separator */}
+        {/* Partners Section avec carousel */}
+        <div className="mb-10">
+          <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+            <Shield className="h-5 w-5 mr-2 text-green-600" />
+            Nos partenaires
+          </h2>
+          <div className="relative overflow-hidden">
+            <div className="flex space-x-8 animate-marquee py-4">
+              {["/ecobank.png", "/simandou2040.jpg", "/orange.jpg", "/mtn.jpg", "/unc.jpg", "/jeunes.jpg", "/enfants.jpg"].map((logo, index) => (
+                <div key={index} className="flex-shrink-0 bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300">
+                  <img 
+                    src={logo} 
+                    alt={`Logo partenaire ${index + 1}`} 
+                    className="h-16 object-contain"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Séparateur */}
         <div className="border-t border-gray-300 my-6"></div>
 
         {/* Footer Links */}
         <div className="pt-2">
-          <nav className="flex flex-wrap justify-center text-sm text-gray-600">
-            <a href="/plan-du-site" className="hover:text-gray-900 transition-colors">Plan du site</a>
-            <span className="mx-2 text-gray-400">|</span>
-            <a href="/accessibilite" className="hover:text-gray-900 transition-colors">Accessibilité : totalement conforme</a>
-            <span className="mx-2 text-gray-400">|</span>
-            <a href="/services-en-ligne" className="hover:text-gray-900 transition-colors">Accessibilité des services en ligne</a>
-            <span className="mx-2 text-gray-400">|</span>
-            <a href="/mentions-legales" className="hover:text-gray-900 transition-colors">Mentions légales</a>
-            <span className="mx-2 text-gray-400">|</span>
-            <a href="/donnees-personnelles" className="hover:text-gray-900 transition-colors">Données personnelles et sécurité</a>
-            <span className="mx-2 text-gray-400">|</span>
-            <a href="/conditions" className="hover:text-gray-900 transition-colors">Conditions générales d'utilisation</a>
-            <span className="mx-2 text-gray-400">|</span>
-            <a href="/cookies" className="hover:text-gray-900 transition-colors">Gestion des cookies</a>
+          <nav className="flex flex-wrap justify-center text-sm text-gray-600 gap-y-2">
+            <a href="/plan-du-site" className="hover:text-green-600 transition-colors px-3 py-1">Plan du site</a>
+            <span className="text-gray-400">|</span>
+            <a href="/accessibilite" className="hover:text-green-600 transition-colors px-3 py-1">Accessibilité : totalement conforme</a>
+            <span className="text-gray-400">|</span>
+            <a href="/services-en-ligne" className="hover:text-green-600 transition-colors px-3 py-1">Accessibilité des services en ligne</a>
+            <span className="text-gray-400">|</span>
+            <a href="/mentions-legales" className="hover:text-green-600 transition-colors px-3 py-1">Mentions légales</a>
+            <span className="text-gray-400">|</span>
+            <a href="/donnees-personnelles" className="hover:text-green-600 transition-colors px-3 py-1">Données personnelles et sécurité</a>
+            <span className="text-gray-400">|</span>
+            <a href="/conditions" className="hover:text-green-600 transition-colors px-3 py-1">Conditions générales d'utilisation</a>
+            <span className="text-gray-400">|</span>
+            <a href="/cookies" className="hover:text-green-600 transition-colors px-3 py-1">Gestion des cookies</a>
           </nav>
         </div>
 
@@ -108,20 +163,33 @@ const Footer = () => {
             Sauf mention contraire, tous les contenus de ce site sont sous{' '}
             <a 
               href="https://www.etalab.gouv.fr/licence-ouverte-open-licence/" 
-              className="text-blue-600 hover:text-blue-800 transition-colors"
+              className="text-blue-600 hover:text-blue-800 transition-colors flex items-center justify-center gap-1 inline-flex"
               target="_blank" 
               rel="noopener noreferrer"
             >
               licence etalab-2.0
+              <ExternalLink size={12} />
             </a>
           </p>
         </div>
 
         {/* Copyright */}
-        <div className="text-center mt-4 text-sm text-gray-500">
-          <p>© 2025 République de Guinée - Tous droits réservés</p>
+        <div className="text-center mt-4 text-sm text-gray-500 flex items-center justify-center">
+          <p>© {currentYear} République de Guinée - Tous droits réservés</p>
+          <Heart size={14} className="ml-2 text-red-500" />
         </div>
       </div>
+
+      {/* Ajouter des styles pour l'animation du carousel */}
+      <style jsx>{`
+        @keyframes marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+          animation: marquee 30s linear infinite;
+        }
+      `}</style>
     </footer>
   );
 };

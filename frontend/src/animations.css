@@ -1,0 +1,179 @@
+/* animations.css - Animations pour le portail CNID Guinée */
+
+/* Animation de fondu et mise à l'échelle */
+@keyframes fadeInScale {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+/* Animation pour le texte secondaire */
+@keyframes slideInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animation pour le texte sur les images */
+@keyframes pulseGlow {
+  0% {
+    opacity: 0.8;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.5);
+  }
+  100% {
+    opacity: 0.9;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+    transform: scale(1.02);
+  }
+}
+
+/* Animation d'apparition des cartes */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animation de survol des boutons */
+@keyframes buttonPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 128, 0, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(0, 128, 0, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 128, 0, 0);
+  }
+}
+
+/* Animation pour les icônes */
+@keyframes rotateIcon {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(10deg);
+  }
+  75% {
+    transform: rotate(-10deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* Animation pour les statistiques */
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animation pour les bordures */
+@keyframes borderPulse {
+  0% {
+    border-color: rgba(0, 128, 0, 0.5);
+  }
+  50% {
+    border-color: rgba(0, 128, 0, 1);
+  }
+  100% {
+    border-color: rgba(0, 128, 0, 0.5);
+  }
+}
+
+/* Animation pour les notifications */
+@keyframes notificationBadge {
+  0% {
+    transform: scale(0.8);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Classes utilitaires pour les animations */
+.animate-fadeIn {
+  animation: fadeInScale 1s ease-in-out;
+}
+
+.animate-slideUp {
+  animation: slideInUp 0.8s ease-out;
+}
+
+.animate-pulse {
+  animation: pulseGlow 2s infinite;
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.animate-buttonPulse:hover {
+  animation: buttonPulse 1.5s infinite;
+}
+
+.animate-rotateIcon:hover {
+  animation: rotateIcon 1s ease-in-out;
+}
+
+.animate-countUp {
+  animation: countUp 1.5s ease-out;
+}
+
+.animate-borderPulse {
+  animation: borderPulse 2s infinite;
+}
+
+.animate-notification {
+  animation: notificationBadge 1s ease-in-out infinite;
+}
+
+/* Transitions */
+.transition-all {
+  transition: all 0.3s ease;
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+  transition: transform 0.3s ease;
+}
+
+.hover-shadow:hover {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.3s ease;
+}
+
+.hover-bright:hover {
+  filter: brightness(1.1);
+  transition: filter 0.3s ease;
+}
