@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import CitoyenHeader from './CitoyenHeader';
 import MapView from '../../Common/MapView';
+import { CheckCircle } from 'lucide-react';
+
 
 const BiometriePage = () => {
   const [selectedCommune, setSelectedCommune] = useState("");
@@ -196,14 +198,17 @@ const BiometriePage = () => {
                             <button
                               key={index}
                               onClick={() => setSelectedDate(date.full)}
-                              className={'p-3 md:p-4 rounded-lg text-center transition-colors ' + (
-                                selectedDate && selectedDate.getDate() === date.date
-                                  ? 'bg-blue-50 border-2 border-blue-500'
-                                  : index === 4 ? 'bg-green-50 border border-green-200 hover:bg-white' : 'hover:bg-white border border-gray-200'
-                              )}
+                              className={`p-3 md:p-4 rounded-lg text-center transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                                selectedDate && selectedDate.getTime() === date.full.getTime()
+                                  ? 'bg-blue-600 text-white shadow-lg border-2 border-blue-700'
+                                  : 'bg-gray-50 hover:bg-blue-100 border border-gray-200 hover:border-blue-300'
+                              }`}
                             >
                               <div className="font-medium text-sm md:text-base">{date.day}</div>
-                              <div className="text-lg font-bold mt-1 md:text-xl">{date.date}</div>
+                              <div className={`text-lg font-bold mt-1 md:text-xl ${selectedDate && selectedDate.getTime() === date.full.getTime() ? 'text-white' : 'text-gray-800'}`}>{date.date}</div>
+                              {selectedDate && selectedDate.getTime() === date.full.getTime() && (
+                                <CheckCircle className="w-5 h-5 absolute top-2 right-2 text-white" />
+                              )}
                             </button>
                           ))}
                         </div>

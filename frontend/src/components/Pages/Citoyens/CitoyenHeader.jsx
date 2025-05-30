@@ -1,14 +1,45 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Bell, Menu, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Bell, Menu, X, User, HelpCircle, FileText, Home, Calendar } from 'lucide-react';
 
 const CitoyenHeader = () => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
+  
+  // Déterminer la page active
+  const isActive = (path) => location.pathname === path;
+  
+  // Effet pour détecter le défilement
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 10) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+  
+  // Fermer les menus si on clique ailleurs
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isProfileMenuOpen && !event.target.closest('.profile-menu-container')) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isProfileMenuOpen]);
   
   return (
-    <header className="bg-white shadow-sm py-2 sm:py-3 px-4 fixed top-0 w-full z-50">
-      <div className="container mx-auto">
+    <header className={`bg-white ${scrolled ? 'shadow-md' : 'shadow-sm'} py-2 sm:py-3 px-4 fixed top-0 w-full z-50 transition-all duration-300`}>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
         <div className="flex items-center justify-between">
           {/* Logo et Navigation links */}
           <div className="flex items-center">
@@ -21,63 +52,79 @@ const CitoyenHeader = () => {
             </button>
             
             {/* Logo avec emblème */}
-            <div className="flex items-center mr-6">
-              <img src="/emblème.png" alt="Emblème de la Guinée" className="h-8 w-8 object-contain mr-2" />
-            </div>
+            <Link to="/portail-citoyens" className="flex items-center mr-6 group">
+              <div className="relative">
+                <img src="/emblème.png" alt="Emblème de la Guinée" className="h-10 w-10 object-contain mr-2 transition-transform duration-300 group-hover:scale-105" />
+                <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 h-0.5 bg-gradient-to-r from-red-600 via-yellow-400 to-green-600 w-0 group-hover:w-full transition-all duration-300"></span>
+              </div>
+              <span className="font-semibold text-gray-800 hidden sm:block">CNID Guinée</span>
+            </Link>
             
             {/* Navigation links - desktop */}
-            <nav className="hidden md:flex items-center space-x-4 lg:space-x-8">
-              <Link to="/biometrie" className="text-gray-700 hover:text-red-600 font-medium text-sm lg:text-base">
-                Biométrie
+            <nav className="hidden md:flex items-center space-x-2 lg:space-x-6">
+              <Link to="/biometrie" className={`flex items-center px-3 py-2 rounded-lg transition-all duration-200 ${isActive('/biometrie') ? 'bg-red-50 text-red-600' : 'text-gray-700 hover:bg-gray-50'}`}>
+                <Calendar size={18} className="mr-2" />
+                <span className="font-medium text-sm lg:text-base">Biométrie</span>
               </Link>
-              <Link to="/portail-citoyens" className="text-gray-700 hover:text-green-600 font-medium text-sm lg:text-base">
-                Tableau de bord
+              <Link to="/portail-citoyens" className={`flex items-center px-3 py-2 rounded-lg transition-all duration-200 ${isActive('/portail-citoyens') ? 'bg-green-50 text-green-600' : 'text-gray-700 hover:bg-gray-50'}`}>
+                <Home size={18} className="mr-2" />
+                <span className="font-medium text-sm lg:text-base">Tableau de bord</span>
               </Link>
               
-              <Link to="/nouvelle-demande" className="text-gray-700 hover:text-yellow-600 font-medium text-sm lg:text-base">
-                Nouvelle demande
+              <Link to="/nouvelle-demande" className={`flex items-center px-3 py-2 rounded-lg transition-all duration-200 ${isActive('/nouvelle-demande') ? 'bg-yellow-50 text-yellow-600' : 'text-gray-700 hover:bg-gray-50'}`}>
+                <FileText size={18} className="mr-2" />
+                <span className="font-medium text-sm lg:text-base">Nouvelle demande</span>
               </Link>
       
-              <Link to="/historique" className="text-gray-700 hover:text-red-600 font-medium text-sm lg:text-base">
-                Historique
+              <Link to="/historique" className={`flex items-center px-3 py-2 rounded-lg transition-all duration-200 ${isActive('/historique') ? 'bg-red-50 text-red-600' : 'text-gray-700 hover:bg-gray-50'}`}>
+                <Bell size={18} className="mr-2" />
+                <span className="font-medium text-sm lg:text-base">Historique</span>
               </Link>
-              <Link to="/aide" className="text-gray-700 hover:text-green-600 font-medium text-sm lg:text-base">
-                Aide
+              <Link to="/aide" className={`flex items-center px-3 py-2 rounded-lg transition-all duration-200 ${isActive('/aide') ? 'bg-green-50 text-green-600' : 'text-gray-700 hover:bg-gray-50'}`}>
+                <HelpCircle size={18} className="mr-2" />
+                <span className="font-medium text-sm lg:text-base">Aide</span>
               </Link>
             </nav>
           </div>
           
           {/* User profile and notifications */}
-          <div className="flex items-center space-x-2 md:space-x-4">
+          <div className="flex items-center space-x-3 md:space-x-5">
             {/* Notification bell */}
-            <button className="relative p-1 text-gray-700 hover:text-yellow-600 transition-colors">
+            <button className="relative p-2 text-gray-700 hover:text-yellow-600 transition-colors hover:bg-yellow-50 rounded-full">
               <Bell size={20} />
-              <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+              <span className="absolute top-1 right-1 h-2.5 w-2.5 bg-red-500 rounded-full ring-2 ring-white animate-pulse"></span>
             </button>
             
             {/* User profile */}
-            <div className="relative">
+            <div className="relative profile-menu-container">
               <button 
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                className="flex items-center space-x-1 md:space-x-2 focus:outline-none"
+                className="flex items-center space-x-2 focus:outline-none p-1 rounded-full hover:bg-gray-50 transition-colors"
               >
-                <div className="h-8 w-8 rounded-full bg-red-600 flex items-center justify-center text-white font-medium">
+                <div className="h-9 w-9 rounded-full bg-gradient-to-r from-red-600 to-red-500 flex items-center justify-center text-white font-medium ring-2 ring-white shadow-sm">
                   BB
                 </div>
                 <span className="hidden sm:inline text-gray-700 font-medium text-sm md:text-base">Boubacar Bah</span>
-                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-gray-500 transition-transform ${isProfileMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-gray-500 transition-transform duration-300 ${isProfileMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
               
               {/* Dropdown menu */}
               {isProfileMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                  <Link to="/profil" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl py-2 z-10 border border-gray-100 animate-fadeIn">
+                  <div className="px-4 py-2 border-b border-gray-100">
+                    <p className="text-sm font-medium text-gray-900">Boubacar Bah</p>
+                    <p className="text-xs text-gray-500">citoyen@example.com</p>
+                  </div>
+                  <Link to="/profil" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                    <User size={16} className="mr-2 text-gray-500" />
                     Mon profil
                   </Link>
-                  <div className="border-t border-gray-100"></div>
-                  <Link to="/" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  <Link to="/" className="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
                     Se déconnecter
                   </Link>
                 </div>
@@ -87,25 +134,30 @@ const CitoyenHeader = () => {
         </div>
         
         {/* Menu mobile */}
-        {isMobileMenuOpen && (
-          <nav className="md:hidden mt-4 pb-2 border-t border-gray-100 pt-2">
-            <Link to="/biometrie" className="block py-2 text-gray-700 hover:text-red-600 font-medium">
-              Biométrie
+        <div className={`md:hidden overflow-hidden transition-all duration-300 ${isMobileMenuOpen ? 'max-h-64' : 'max-h-0'}`}>
+          <nav className="mt-4 pb-2 border-t border-gray-100 pt-2 space-y-1">
+            <Link to="/biometrie" className={`flex items-center py-2 px-3 rounded-lg ${isActive('/biometrie') ? 'bg-red-50 text-red-600' : 'text-gray-700'}`}>
+              <Calendar size={18} className="mr-3" />
+              <span className="font-medium">Biométrie</span>
             </Link>
-            <Link to="/portail-citoyens" className="block py-2 text-gray-700 hover:text-green-600 font-medium">
-              Tableau de bord
+            <Link to="/portail-citoyens" className={`flex items-center py-2 px-3 rounded-lg ${isActive('/portail-citoyens') ? 'bg-green-50 text-green-600' : 'text-gray-700'}`}>
+              <Home size={18} className="mr-3" />
+              <span className="font-medium">Tableau de bord</span>
             </Link>
-            <Link to="/nouvelle-demande" className="block py-2 text-gray-700 hover:text-yellow-600 font-medium">
-              Nouvelle demande
+            <Link to="/nouvelle-demande" className={`flex items-center py-2 px-3 rounded-lg ${isActive('/nouvelle-demande') ? 'bg-yellow-50 text-yellow-600' : 'text-gray-700'}`}>
+              <FileText size={18} className="mr-3" />
+              <span className="font-medium">Nouvelle demande</span>
             </Link>
-            <Link to="/aide" className="block py-2 text-gray-700 hover:text-green-600 font-medium">
-              Aide
+            <Link to="/historique" className={`flex items-center py-2 px-3 rounded-lg ${isActive('/historique') ? 'bg-red-50 text-red-600' : 'text-gray-700'}`}>
+              <Bell size={18} className="mr-3" />
+              <span className="font-medium">Historique</span>
             </Link>
-            <Link to="/historique" className="block py-2 text-gray-700 hover:text-red-600 font-medium">
-              Historique
+            <Link to="/aide" className={`flex items-center py-2 px-3 rounded-lg ${isActive('/aide') ? 'bg-green-50 text-green-600' : 'text-gray-700'}`}>
+              <HelpCircle size={18} className="mr-3" />
+              <span className="font-medium">Aide</span>
             </Link>
           </nav>
-        )}
+        </div>
       </div>
     </header>
   );

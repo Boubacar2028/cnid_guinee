@@ -96,11 +96,11 @@ const TestimonialsSection = () => {
 
   return (
     <section 
-      id="testimonials"
       ref={sectionRef}
-      className={`py-12 bg-gradient-to-b from-white to-gray-50 transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+      id="testimonials"
+      className="py-16 bg-gray-100 overflow-x-hidden"
     >
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 max-w-full">
         {/* Titre et séparateur dans un style administratif */}
         <div className="text-center mb-10">
           <div className="inline-block bg-red-600 text-white px-6 py-2 rounded-full mb-4 transform hover:scale-105 transition-transform duration-300">

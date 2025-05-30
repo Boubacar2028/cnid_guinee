@@ -3,6 +3,11 @@
 @tailwind utilities;
 @import "leaflet/dist/leaflet.css";
 
+/* Empêcher le défilement horizontal */
+html, body, #root {
+  overflow-x: hidden;
+  max-width: 100%;
+}
 
 /* Animation pour le texte Bienvenu */
 @keyframes fadeInScale {

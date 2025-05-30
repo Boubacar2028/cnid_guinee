@@ -69,7 +69,8 @@ const PortalsSection = () => {
       buttonBg: 'bg-purple-500',
       buttonHover: 'hover:bg-purple-600',
       delay: '600',
-      path: '/portail-administrateur'
+      path: '/portail-administrateur',
+      isSpecial: true
     },
   ];
 
@@ -77,9 +78,9 @@ const PortalsSection = () => {
     <section 
       id="portals"
       ref={sectionRef}
-      className={`py-16 bg-white transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+      className="py-16 bg-white transition-all duration-1000 overflow-x-hidden ${isVisible ? 'opacity-100' : 'opacity-0'}"
     >
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 max-w-full">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Colonne verte à gauche - visible uniquement sur desktop */}
           <div className="hidden lg:block lg:w-1/4 bg-gradient-to-b from-green-500 to-teal-600 text-white p-8 rounded-lg shadow-lg">
@@ -108,7 +109,7 @@ const PortalsSection = () => {
             {portals.map((portal, index) => (
               <div 
                 key={index} 
-                className="bg-white rounded-lg shadow-lg p-8 text-center transition-all duration-500 hover:shadow-2xl hover:scale-105 hover:-translate-y-2 cursor-pointer group"
+                className={`bg-white rounded-lg shadow-lg p-8 text-center transition-all duration-500 hover:shadow-2xl hover:scale-105 hover:-translate-y-2 cursor-pointer group ${portal.isSpecial ? 'relative z-10' : ''} ${portal.isSpecial ? 'animate-pulse-slow' : ''}`}
                 style={{
                   opacity: isVisible ? 1 : 0,
                   transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
@@ -120,12 +121,26 @@ const PortalsSection = () => {
                 </div>
                 <h3 className={`text-2xl font-bold mb-3 ${portal.color} transition-all duration-300 group-hover:scale-105`}>{portal.title}</h3>
                 <p className="text-gray-700 text-lg mb-6 transition-all duration-300 group-hover:text-gray-900">{portal.description}</p>
-                <Link 
-                  to={portal.path}
-                  className={`${portal.buttonBg} ${portal.buttonHover} text-white font-medium py-3 px-8 rounded-lg inline-block w-full md:w-auto transition-all duration-300 hover:shadow-lg active:scale-95 touch-manipulation`}
-                >
-                  Accéder
-                </Link>
+                {portal.isSpecial ? (
+                  // Bouton spécial pour l'administrateur - plus facile à cliquer
+                  <a 
+                    href={portal.path}
+                    className={`${portal.buttonBg} ${portal.buttonHover} text-white font-bold py-3 px-6 rounded-lg block w-full transition-all duration-300 hover:shadow-lg text-center`}
+                    style={{ fontSize: '1rem' }}
+                  >
+                    Accéder
+                  </a>
+                ) : (
+                  // Bouton standard pour les autres portails
+                  <Link 
+                    to={portal.path}
+                    className={`${portal.buttonBg} ${portal.buttonHover} text-white font-bold py-4 px-8 rounded-lg inline-block w-full transition-all duration-300 hover:shadow-lg active:scale-95`}
+                    role="button"
+                    aria-label={`Accéder au ${portal.title}`}
+                  >
+                    Accéder
+                  </Link>
+                )}
               </div>
             ))}
           </div>

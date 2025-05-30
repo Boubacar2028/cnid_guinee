@@ -55,7 +55,7 @@ const ImageCarousel = () => {
   return (
     <div 
       ref={carouselRef}
-      className="relative w-full h-[300px] md:h-[400px] lg:h-[500px] overflow-hidden mt-[140px] md:mt-[150px] lg:mt-[160px] shadow-2xl"
+      className="relative w-full h-[300px] md:h-[400px] lg:h-[500px] overflow-hidden mt-[140px] md:mt-[150px] lg:mt-[160px] shadow-2xl max-w-full"
     >
       {/* Overlay de gradient pour améliorer la lisibilité du texte */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
