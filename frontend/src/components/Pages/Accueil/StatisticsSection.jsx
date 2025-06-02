@@ -5,25 +5,76 @@ import '../../../animations.css';
 const StatisticsSection = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [counts, setCounts] = useState({ demandes: 0, agents: 0, citoyens: 0, satisfaction: 0 });
+  const [targetCounts, setTargetCounts] = useState({ demandes: 0, agents: 0, citoyens: 0, satisfaction: 98 });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const sectionRef = useRef(null);
   const hasAnimated = useRef(false);
 
+  // Récupérer les statistiques depuis l'API
+  useEffect(() => {
+    const fetchStatistics = async () => {
+      try {
+        setIsLoading(true);
+        
+        console.log('🔍 Début de la récupération des statistiques');
+        
+        // Appel à l'API pour récupérer les statistiques
+        console.log('🔍 Appel de l\'URL: /api/statistics/');
+        
+        // Essayer d'abord avec l'URL relative (proxy)
+        let response;
+        try {
+          response = await fetch('/api/statistics/');
+        } catch (error) {
+          console.log('Échec avec l\'URL relative, tentative avec l\'URL complète');
+          // Si ça échoue, essayer avec l'URL complète
+          response = await fetch('http://localhost:8000/api/statistics/');
+        }
+        
+        if (!response.ok) {
+          throw new Error(`Erreur: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Données reçues:', data);
+        
+        // Mise à jour des valeurs cibles avec les données réelles
+        setTargetCounts({
+          demandes: data.processedRequests || 0,
+          agents: data.activeAgents || 0,
+          citoyens: data.registeredCitizens || 0,
+          satisfaction: data.satisfactionRate || 98 // Valeur par défaut si non fournie
+        });
+      } catch (err) {
+        console.error('Erreur lors de la récupération des statistiques:', err);
+        setError('Impossible de charger les statistiques');
+        // En cas d'erreur, on utilise des valeurs de démonstration
+        setTargetCounts({
+          demandes: 1250,
+          agents: 85,
+          citoyens: 15000,
+          satisfaction: 98
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchStatistics();
+  }, []);
+
   // Animation de comptage pour les statistiques
   useEffect(() => {
-    if (isVisible && !hasAnimated.current) {
+    if (isVisible && !hasAnimated.current && !isLoading) {
       hasAnimated.current = true;
       
-      // Animation de comptage pour les demandes traitées
-      const targetDemandes = 21480;
-      const targetAgents = 145;
-      const targetCitoyens = 35750;
-      const targetSatisfaction = 98;
       const durationDemandes = 2000; // 2 secondes
       
-      const stepDemandes = Math.ceil(targetDemandes / (durationDemandes / 16)); // 60fps
-      const stepAgents = Math.ceil(targetAgents / (durationDemandes / 16));
-      const stepCitoyens = Math.ceil(targetCitoyens / (durationDemandes / 16));
-      const stepSatisfaction = Math.ceil(targetSatisfaction / (durationDemandes / 16));
+      const stepDemandes = Math.ceil(targetCounts.demandes / (durationDemandes / 16)); // 60fps
+      const stepAgents = Math.ceil(targetCounts.agents / (durationDemandes / 16));
+      const stepCitoyens = Math.ceil(targetCounts.citoyens / (durationDemandes / 16));
+      const stepSatisfaction = Math.ceil(targetCounts.satisfaction / (durationDemandes / 16));
       
       let currentDemandes = 0;
       let currentAgents = 0;
@@ -31,10 +82,10 @@ const StatisticsSection = () => {
       let currentSatisfaction = 0;
       
       const interval = setInterval(() => {
-        currentDemandes = Math.min(currentDemandes + stepDemandes, targetDemandes);
-        currentAgents = Math.min(currentAgents + stepAgents, targetAgents);
-        currentCitoyens = Math.min(currentCitoyens + stepCitoyens, targetCitoyens);
-        currentSatisfaction = Math.min(currentSatisfaction + stepSatisfaction, targetSatisfaction);
+        currentDemandes = Math.min(currentDemandes + stepDemandes, targetCounts.demandes);
+        currentAgents = Math.min(currentAgents + stepAgents, targetCounts.agents);
+        currentCitoyens = Math.min(currentCitoyens + stepCitoyens, targetCounts.citoyens);
+        currentSatisfaction = Math.min(currentSatisfaction + stepSatisfaction, targetCounts.satisfaction);
         
         setCounts({
           demandes: currentDemandes,
@@ -43,17 +94,17 @@ const StatisticsSection = () => {
           satisfaction: currentSatisfaction
         });
         
-        if (currentDemandes >= targetDemandes && 
-            currentAgents >= targetAgents && 
-            currentCitoyens >= targetCitoyens &&
-            currentSatisfaction >= targetSatisfaction) {
+        if (currentDemandes >= targetCounts.demandes && 
+            currentAgents >= targetCounts.agents && 
+            currentCitoyens >= targetCounts.citoyens &&
+            currentSatisfaction >= targetCounts.satisfaction) {
           clearInterval(interval);
         }
       }, 16);
       
       return () => clearInterval(interval);
     }
-  }, [isVisible]);
+  }, [isVisible, isLoading, targetCounts]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -190,7 +241,10 @@ const StatisticsSection = () => {
           <div>
             <h4 className="font-semibold text-gray-800">Information officielle</h4>
             <p className="text-sm text-gray-600">
-              Les statistiques sont mises à jour quotidiennement par le Ministère de l'Administration du Territoire. Dernière mise à jour: 26/05/2025
+              {error ? 
+                "Les statistiques affichées sont des données de démonstration. Connexion au serveur impossible." :
+                `Les statistiques sont mises à jour quotidiennement par le Ministère de l'Administration du Territoire. Dernière mise à jour: ${new Date().toLocaleDateString('fr-FR')}`
+              }
             </p>
           </div>
         </div>

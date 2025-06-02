@@ -7,20 +7,24 @@ class CustomUserAdmin(UserAdmin):
     model = Utilisateur
     list_display = ('username', 'email', 'type_utilisateur', 'telephone', 'is_staff')
     list_filter = ('type_utilisateur', 'is_staff', 'is_superuser')
+
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
-        ('Informations personnelles', {'fields': ('email', 'telephone', 'type_utilisateur')}),
+        ('Informations personnelles', {'fields': ('first_name', 'last_name', 'email', 'telephone', 'type_utilisateur')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Dates importantes', {'fields': ('last_login', 'date_joined')}),
     )
+    
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'email', 'telephone', 'type_utilisateur', 'password1', 'password2'),
+            'fields': ('username', 'first_name', 'last_name', 'email', 'telephone', 'type_utilisateur', 'password1', 'password2'),
         }),
     )
-    search_fields = ('username', 'email')
+    
+    search_fields = ('username', 'email', 'first_name', 'last_name')
     ordering = ('username',)
+
 
 @admin.register(Citoyen)
 class CitoyenAdmin(admin.ModelAdmin):

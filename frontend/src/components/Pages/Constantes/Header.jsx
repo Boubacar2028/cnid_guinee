@@ -77,7 +77,7 @@ const Header = () => {
                 <div className="w-1/3 bg-green-600"></div>
               </div>
               <div className="bg-white p-1 rounded-full shadow-sm">
-                <img src="/emblème.png" alt="Emblème" className="h-10 w-10 object-contain" />
+                <img src="/embleme.png" alt="Emblème" className="h-10 w-10 object-contain" />
               </div>
               <div>
                 <h1 className="font-bold text-lg md:text-2xl bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700">RÉPUBLIQUE DE GUINÉE</h1>

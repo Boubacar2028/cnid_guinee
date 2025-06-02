@@ -194,7 +194,7 @@ const TestimonialsSection = () => {
         <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg shadow-md max-w-3xl mx-auto">
           <div className="flex items-start">
             <div className="flex-shrink-0 pt-0.5">
-              <img src="/emblème.png" alt="Emblème de la Guinée" className="h-10 w-10" />
+              <img src="/embleme.png" alt="Emblème de la Guinée" className="h-10 w-10" />
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-blue-800">Information officielle</h3>

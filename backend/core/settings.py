@@ -48,6 +48,7 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = 'gestion_cni.Utilisateur'
 
 AUTHENTICATION_BACKENDS = [
+    'gestion_cni.backends.EmailBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
 

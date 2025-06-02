@@ -59,7 +59,7 @@ const WelcomeSection = () => {
              }}>
           <div className="flex items-center justify-center mb-4">
             <div className="h-12 w-12 bg-red-600 rounded-full flex items-center justify-center mr-4 animate-pulse">
-              <img src="/emblème.png" alt="Emblème" className="h-8 w-8" />
+              <img src="/embleme.png" alt="Emblème" className="h-8 w-8" />
             </div>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-center">
               Portail CNID Guinée

@@ -1,0 +1,7 @@
+Pour résoudre le problème des diagrammes qui ne s'affichent pas dans le tableau de bord administrateur, nous devons installer la bibliothèque Chart.js et react-chartjs-2 qui est un wrapper React pour Chart.js.
+
+Exécutez la commande suivante dans le terminal:
+
+npm install chart.js react-chartjs-2
+
+Cette commande installera les dépendances nécessaires pour créer des graphiques interactifs dans le tableau de bord administrateur.

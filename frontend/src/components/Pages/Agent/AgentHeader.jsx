@@ -20,7 +20,7 @@ const AgentHeader = ({ onOpenPasswordModal }) => {
             <div className="flex-shrink-0">
               <div className="flex items-center">
                 <div className="h-10 w-10 bg-red-600 rounded-md flex items-center justify-center">
-                  <img src="/emblème.png" alt="CNI Guinée" className="h-8 w-8" />
+                  <img src="/embleme.png" alt="CNI Guinée" className="h-8 w-8" />
                 </div>
                 <div className="ml-3">
                   <div className="text-lg font-semibold text-gray-900">CNID Guinée</div>

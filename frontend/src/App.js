@@ -1,38 +1,54 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Header from './components/Pages/Constantes/Header';
 import Footer from './components/Pages/Constantes/Footer';
 import AccueilRoutes from './components/Pages/Accueil/AccueilRoutes';
-import CitoyenRoutes from './components/Pages/Citoyens/CitoyenRoutes';
 import AgentRoutes from './components/Pages/Agent/AgentRoutes';
 import AdminRoutes from './components/Pages/Administrateur/AdminRoutes';
+import AuthPage from './components/auth/AuthPage';
+
+// Import des composants du portail citoyen
+import CitoyensPortal from './components/Pages/Citoyens/CitoyensPortal';
+import BiometriePage from './components/Pages/Citoyens/BiometriePage';
+import NouvelleDemandePage from './components/Pages/Citoyens/NouvelleDemandePage';
+import HistoriquePage from './components/Pages/Citoyens/HistoriquePage';
+import AidePage from './components/Pages/Citoyens/AidePage';
+import ProfilePage from './components/Pages/Citoyens/ProfilePage';
 
 // Composant pour gérer l'affichage conditionnel du header
 const AppContent = () => {
   const location = useLocation();
-  const citoyenPaths = [
-    '/portail-citoyens',
-    '/biometrie',
-    '/tableau-de-bord',
-    '/nouvelle-demande',
-    '/historique',
-    '/aide',
-    '/profil',
-    '/portail-agents',
-    '/portail-administrateur'
-  ];
-  const isInCitoyenSection = citoyenPaths.some(path => location.pathname.includes(path));
+  
+  // Détecter si nous sommes dans une section de portail
+  const isInPortalSection = 
+    location.pathname.startsWith('/portail-citoyens') ||
+    location.pathname.startsWith('/portail-agents') ||
+    location.pathname.startsWith('/portail-administrateur');
+  
+  const isAuthPage = location.pathname === '/auth';
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col overflow-x-hidden">
-      {!isInCitoyenSection && <Header />}
+      {!isInPortalSection && !isAuthPage && <Header />}
       <Routes>
           <Route path="/" element={<AccueilRoutes />} />
-          <Route path="/portail-citoyens/*" element={<CitoyenRoutes />} />
-          <Route path="/portail-agents" element={<AgentRoutes />} />
-          <Route path="/portail-administrateur" element={<AdminRoutes />} />
-        </Routes>
-        {!isInCitoyenSection && <Footer />}
+          <Route path="/auth" element={<AuthPage />} />
+          
+          {/* Routes du portail citoyen */}
+          <Route path="/portail-citoyens" element={<CitoyensPortal />} />
+          <Route path="/portail-citoyens/biometrie" element={<BiometriePage />} />
+          <Route path="/portail-citoyens/nouvelle-demande" element={<NouvelleDemandePage />} />
+          <Route path="/portail-citoyens/historique" element={<HistoriquePage />} />
+          <Route path="/portail-citoyens/aide" element={<AidePage />} />
+          <Route path="/portail-citoyens/profil" element={<ProfilePage />} />
+          
+          {/* Routes pour les autres portails */}
+          <Route path="/portail-agents/*" element={<AgentRoutes />} />
+          <Route path="/portail-administrateur/*" element={<AdminRoutes />} />
+          <Route path="/dashboard" element={<Navigate to="/portail-agents" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      {!isInPortalSection && !isAuthPage && <Footer />}
       </div>
   );
 };

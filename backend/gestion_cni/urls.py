@@ -7,7 +7,9 @@ from .views import (
     AgentViewSet,
     AdministrateurViewSet,
     ExtraitNaissanceViewSet,
-    DemandeViewSet
+    DemandeViewSet,
+    get_statistics,
+    admin_dashboard
 )
 
 router = DefaultRouter()
@@ -21,6 +23,12 @@ urlpatterns = [
     # Endpoints d'authentification
     path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    
+    # Endpoints statistiques
+    path('statistics/', get_statistics, name='statistics'),
+    
+    # Endpoint dashboard administrateur
+    path('admin/dashboard/', admin_dashboard, name='admin-dashboard'),
     
     # Endpoints API
     path('', include(router.urls)),

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import AdminSidebar from './AdminSidebar';
 import Dashboard from './Dashboard';
+import EmployeeManagement from './EmployeeManagement';
 
 const AdminPortal = () => {
   const [activeMenu, setActiveMenu] = useState('dashboard');
@@ -11,7 +12,7 @@ const AdminPortal = () => {
       case 'dashboard':
         return <Dashboard />;
       case 'employees':
-        return <div className="p-6">Gestion des employés - Contenu à venir</div>;
+        return <EmployeeManagement />;
       case 'configuration':
         return <div className="p-6">Configuration - Contenu à venir</div>;
       default:

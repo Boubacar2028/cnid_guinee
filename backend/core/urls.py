@@ -15,9 +15,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from gestion_cni.views import get_statistics, admin_dashboard
 
 
 urlpatterns = [
     path('cnid_admin/', admin.site.urls),
     path('api/auth/', include('gestion_cni.urls')),
+    path('api/statistics/', get_statistics, name='api-statistics'),
+    path('api/admin/dashboard/', admin_dashboard, name='admin-dashboard'),
 ]

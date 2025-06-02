@@ -54,7 +54,7 @@ const CitoyenHeader = () => {
             {/* Logo avec emblème */}
             <Link to="/portail-citoyens" className="flex items-center mr-6 group">
               <div className="relative">
-                <img src="/emblème.png" alt="Emblème de la Guinée" className="h-10 w-10 object-contain mr-2 transition-transform duration-300 group-hover:scale-105" />
+                <img src="/embleme.png" alt="Emblème de la Guinée" className="h-10 w-10 object-contain mr-2 transition-transform duration-300 group-hover:scale-105" />
                 <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 h-0.5 bg-gradient-to-r from-red-600 via-yellow-400 to-green-600 w-0 group-hover:w-full transition-all duration-300"></span>
               </div>
               <span className="font-semibold text-gray-800 hidden sm:block">CNID Guinée</span>
@@ -62,7 +62,7 @@ const CitoyenHeader = () => {
             
             {/* Navigation links - desktop */}
             <nav className="hidden md:flex items-center space-x-2 lg:space-x-6">
-              <Link to="/biometrie" className={`flex items-center px-3 py-2 rounded-lg transition-all duration-200 ${isActive('/biometrie') ? 'bg-red-50 text-red-600' : 'text-gray-700 hover:bg-gray-50'}`}>
+              <Link to="/portail-citoyens/biometrie" className={`flex items-center px-3 py-2 rounded-lg transition-all duration-200 ${isActive('/portail-citoyens/biometrie') ? 'bg-red-50 text-red-600' : 'text-gray-700 hover:bg-gray-50'}`}>
                 <Calendar size={18} className="mr-2" />
                 <span className="font-medium text-sm lg:text-base">Biométrie</span>
               </Link>
@@ -71,16 +71,17 @@ const CitoyenHeader = () => {
                 <span className="font-medium text-sm lg:text-base">Tableau de bord</span>
               </Link>
               
-              <Link to="/nouvelle-demande" className={`flex items-center px-3 py-2 rounded-lg transition-all duration-200 ${isActive('/nouvelle-demande') ? 'bg-yellow-50 text-yellow-600' : 'text-gray-700 hover:bg-gray-50'}`}>
+              <Link to="/portail-citoyens/nouvelle-demande" className={`flex items-center px-3 py-2 rounded-lg transition-all duration-200 ${isActive('/portail-citoyens/nouvelle-demande') ? 'bg-yellow-50 text-yellow-600' : 'text-gray-700 hover:bg-gray-50'}`}>
                 <FileText size={18} className="mr-2" />
                 <span className="font-medium text-sm lg:text-base">Nouvelle demande</span>
               </Link>
-      
-              <Link to="/historique" className={`flex items-center px-3 py-2 rounded-lg transition-all duration-200 ${isActive('/historique') ? 'bg-red-50 text-red-600' : 'text-gray-700 hover:bg-gray-50'}`}>
+              
+              <Link to="/portail-citoyens/historique" className={`flex items-center px-3 py-2 rounded-lg transition-all duration-200 ${isActive('/portail-citoyens/historique') ? 'bg-red-50 text-red-600' : 'text-gray-700 hover:bg-gray-50'}`}>
                 <Bell size={18} className="mr-2" />
                 <span className="font-medium text-sm lg:text-base">Historique</span>
               </Link>
-              <Link to="/aide" className={`flex items-center px-3 py-2 rounded-lg transition-all duration-200 ${isActive('/aide') ? 'bg-green-50 text-green-600' : 'text-gray-700 hover:bg-gray-50'}`}>
+              
+              <Link to="/portail-citoyens/aide" className={`flex items-center px-3 py-2 rounded-lg transition-all duration-200 ${isActive('/portail-citoyens/aide') ? 'bg-green-50 text-green-600' : 'text-gray-700 hover:bg-gray-50'}`}>
                 <HelpCircle size={18} className="mr-2" />
                 <span className="font-medium text-sm lg:text-base">Aide</span>
               </Link>
@@ -117,7 +118,7 @@ const CitoyenHeader = () => {
                     <p className="text-sm font-medium text-gray-900">Boubacar Bah</p>
                     <p className="text-xs text-gray-500">citoyen@example.com</p>
                   </div>
-                  <Link to="/profil" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                  <Link to="/portail-citoyens/profil" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                     <User size={16} className="mr-2 text-gray-500" />
                     Mon profil
                   </Link>
@@ -136,7 +137,7 @@ const CitoyenHeader = () => {
         {/* Menu mobile */}
         <div className={`md:hidden overflow-hidden transition-all duration-300 ${isMobileMenuOpen ? 'max-h-64' : 'max-h-0'}`}>
           <nav className="mt-4 pb-2 border-t border-gray-100 pt-2 space-y-1">
-            <Link to="/biometrie" className={`flex items-center py-2 px-3 rounded-lg ${isActive('/biometrie') ? 'bg-red-50 text-red-600' : 'text-gray-700'}`}>
+            <Link to="/portail-citoyens/biometrie" className={`flex items-center py-2 px-3 rounded-lg ${isActive('/portail-citoyens/biometrie') ? 'bg-red-50 text-red-600' : 'text-gray-700'}`}>
               <Calendar size={18} className="mr-3" />
               <span className="font-medium">Biométrie</span>
             </Link>
@@ -144,15 +145,15 @@ const CitoyenHeader = () => {
               <Home size={18} className="mr-3" />
               <span className="font-medium">Tableau de bord</span>
             </Link>
-            <Link to="/nouvelle-demande" className={`flex items-center py-2 px-3 rounded-lg ${isActive('/nouvelle-demande') ? 'bg-yellow-50 text-yellow-600' : 'text-gray-700'}`}>
+            <Link to="/portail-citoyens/nouvelle-demande" className={`flex items-center py-2 px-3 rounded-lg ${isActive('/portail-citoyens/nouvelle-demande') ? 'bg-yellow-50 text-yellow-600' : 'text-gray-700'}`}>
               <FileText size={18} className="mr-3" />
               <span className="font-medium">Nouvelle demande</span>
             </Link>
-            <Link to="/historique" className={`flex items-center py-2 px-3 rounded-lg ${isActive('/historique') ? 'bg-red-50 text-red-600' : 'text-gray-700'}`}>
+            <Link to="/portail-citoyens/historique" className={`flex items-center py-2 px-3 rounded-lg ${isActive('/portail-citoyens/historique') ? 'bg-red-50 text-red-600' : 'text-gray-700'}`}>
               <Bell size={18} className="mr-3" />
               <span className="font-medium">Historique</span>
             </Link>
-            <Link to="/aide" className={`flex items-center py-2 px-3 rounded-lg ${isActive('/aide') ? 'bg-green-50 text-green-600' : 'text-gray-700'}`}>
+            <Link to="/portail-citoyens/aide" className={`flex items-center py-2 px-3 rounded-lg ${isActive('/portail-citoyens/aide') ? 'bg-green-50 text-green-600' : 'text-gray-700'}`}>
               <HelpCircle size={18} className="mr-3" />
               <span className="font-medium">Aide</span>
             </Link>

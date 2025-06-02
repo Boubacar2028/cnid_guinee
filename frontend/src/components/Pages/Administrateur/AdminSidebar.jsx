@@ -13,7 +13,7 @@ const AdminSidebar = ({ activeMenu, setActiveMenu }) => {
       <div className="p-4">
         <div className="flex items-center space-x-3">
           <div className="h-10 w-10 bg-red-600 rounded-lg flex items-center justify-center">
-            <img src="/emblème.png" alt="CNI Guinée" className="h-8 w-8" />
+            <img src="/embleme.png" alt="CNI Guinée" className="h-8 w-8" />
           </div>
           <div>
             <h2 className="font-bold text-gray-800">Admin Portal</h2>

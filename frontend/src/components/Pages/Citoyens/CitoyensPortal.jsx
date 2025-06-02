@@ -17,7 +17,7 @@ const CitoyensPortal = () => {
               <p className="text-gray-600 mt-1">Bienvenue, Boubacar Bah</p>
             </div>
             <button
-              onClick={() => navigate('/nouvelle-demande')}
+              onClick={() => navigate('/portail-citoyens/nouvelle-demande')}
               className="w-full sm:w-auto bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 flex items-center justify-center sm:justify-start"
             >
               <span className="mr-1">+</span> Nouvelle demande
@@ -30,7 +30,7 @@ const CitoyensPortal = () => {
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
                 <h2 className="text-lg font-medium text-gray-900">Mes demandes</h2>
-                <Link to="/nouvelle-demande" className="text-green-600 hover:text-green-700 text-sm font-medium">
+                <Link to="/portail-citoyens/nouvelle-demande" className="text-green-600 hover:text-green-700 text-sm font-medium">
                   + Nouvelle demande
                 </Link>
               </div>
@@ -64,7 +64,7 @@ const CitoyensPortal = () => {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {/* Première demande */}
-                <Link to="/aide#premiere-demande" className="block transition-transform duration-300 hover:scale-105 hover:shadow-md active:bg-blue-200">
+                <Link to="/portail-citoyens/aide#premiere-demande" className="block transition-transform duration-300 hover:scale-105 hover:shadow-md active:bg-blue-200">
                   <div className="bg-red-50 p-3 sm:p-4 rounded-lg border border-red-100 h-full hover:bg-red-100 transition-colors duration-300">
                     <h3 className="font-medium text-red-800 mb-2 flex items-center">
                       Première demande
@@ -77,7 +77,7 @@ const CitoyensPortal = () => {
                 </Link>
                 
                 {/* Renouvellement */}
-                <Link to="/aide#renouvellement" className="block transition-transform duration-300 hover:scale-105 hover:shadow-md active:bg-green-200">
+                <Link to="/portail-citoyens/aide#renouvellement" className="block transition-transform duration-300 hover:scale-105 hover:shadow-md active:bg-green-200">
                   <div className="bg-green-50 p-3 sm:p-4 rounded-lg border border-green-100 h-full hover:bg-green-100 transition-colors duration-300">
                     <h3 className="font-medium text-green-800 mb-2 flex items-center">
                       Renouvellement
@@ -90,7 +90,7 @@ const CitoyensPortal = () => {
                 </Link>
                 
                 {/* Perte ou vol */}
-                <Link to="/aide#perte-vol" className="block transition-transform duration-300 hover:scale-105 hover:shadow-md active:bg-yellow-200">
+                <Link to="/portail-citoyens/aide#perte-vol" className="block transition-transform duration-300 hover:scale-105 hover:shadow-md active:bg-yellow-200">
                   <div className="bg-yellow-50 p-3 sm:p-4 rounded-lg border border-yellow-100 h-full hover:bg-yellow-100 transition-colors duration-300">
                     <h3 className="font-medium text-yellow-800 mb-2 flex items-center">
                       Perte ou vol
@@ -103,7 +103,7 @@ const CitoyensPortal = () => {
                 </Link>
                 
                 {/* Retirer ma carte */}
-                <Link to="/aide#retirer-carte" className="block transition-transform duration-300 hover:scale-105 hover:shadow-md active:bg-purple-200">
+                <Link to="/portail-citoyens/aide#retirer-carte" className="block transition-transform duration-300 hover:scale-105 hover:shadow-md active:bg-purple-200">
                   <div className="bg-red-50 p-3 sm:p-4 rounded-lg border border-red-100 h-full hover:bg-red-100 transition-colors duration-300">
                     <h3 className="font-medium text-red-800 mb-2 flex items-center">
                       Retirer ma carte

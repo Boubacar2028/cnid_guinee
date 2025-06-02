@@ -92,7 +92,7 @@ const ImageCarousel = () => {
                   </p>
                 </div>
                 <img 
-                  src="/emblème.png" 
+                  src="/embleme.png" 
                   alt="Emblème de la Guinée" 
                   className="h-16 md:h-20 lg:h-24 ml-4 animate-rotateIcon"
                 />

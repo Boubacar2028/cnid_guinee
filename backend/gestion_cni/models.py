@@ -51,21 +51,22 @@ class Citoyen(models.Model):
         primary_key=True,
         related_name='citoyen'
     )
-    nin = models.CharField(max_length=20, unique=True, verbose_name="Numéro d'identification national")
-    date_naissance = models.DateField()
-    lieu_naissance = models.CharField(max_length=100)
-    sexe = models.CharField(max_length=1, choices=SEXE_CHOICES)
+    nin = models.CharField(max_length=20, unique=True, verbose_name="Numéro d'identification national", blank=True, null=True)
+    date_naissance = models.DateField(blank=True, null=True)
+    lieu_naissance = models.CharField(max_length=100, blank=True, default="")
+    sexe = models.CharField(max_length=1, choices=SEXE_CHOICES, default="M")
     nationalite = models.CharField(max_length=50, default="Guinéenne")
-    adresse = models.CharField(max_length=100,verbose_name="Domicile")  # Nom cohérent avec SQL
-    profession = models.CharField(max_length=100, blank=True)
+    adresse = models.CharField(max_length=100, verbose_name="Domicile", blank=True, default="")  # Nom cohérent avec SQL
+    profession = models.CharField(max_length=100, blank=True, default="")
     situation_matrimoniale = models.CharField(
         max_length=20,
         choices=SITUATION_CHOICES,
         blank=True,
-        null= True
+        null=True,
+        default="celibataire"
     )
-    pere_nom = models.CharField(max_length=100, verbose_name="Nom du père")
-    mere_nom = models.CharField(max_length=100, verbose_name="Nom de la mère")
+    pere_nom = models.CharField(max_length=100, verbose_name="Nom du père", blank=True, default="")
+    mere_nom = models.CharField(max_length=100, verbose_name="Nom de la mère", blank=True, default="")
     photo = models.ImageField(upload_to='photos/', blank=True)
 
     class Meta:
