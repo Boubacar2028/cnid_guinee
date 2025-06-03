@@ -67,9 +67,6 @@ const NouvelleDemandePage = () => {
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <CitoyenHeader />
       
-      {/* Espacement supplémentaire pour éviter que le header ne cache le contenu */}
-      <div className="h-16"></div>
-      
       {demandeComplete ? (
         <div className="container mx-auto py-16 px-4">
           <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">

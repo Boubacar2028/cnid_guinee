@@ -71,7 +71,8 @@ const Header = () => {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             {/* Bloc gauche : Drapeau + emblème + titre */}
             <div className="flex items-center gap-4">
-              <div className="flex h-12 w-20 rounded-md overflow-hidden shadow-sm">
+              {/* Drapeau visible uniquement sur desktop */}
+              <div className="hidden md:flex h-12 w-20 rounded-md overflow-hidden shadow-sm">
                 <div className="w-1/3 bg-red-600"></div>
                 <div className="w-1/3 bg-yellow-400"></div>
                 <div className="w-1/3 bg-green-600"></div>
@@ -82,6 +83,12 @@ const Header = () => {
               <div>
                 <h1 className="font-bold text-lg md:text-2xl bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700">RÉPUBLIQUE DE GUINÉE</h1>
                 <p className="text-xs md:text-sm text-gray-600">Travail - Justice - Solidarité</p>
+                {/* Ligne tricolore horizontale visible uniquement sur mobile */}
+                <div className="md:hidden flex h-1 w-full mt-1 rounded-md overflow-hidden">
+                  <div className="w-1/3 bg-red-600"></div>
+                  <div className="w-1/3 bg-yellow-400"></div>
+                  <div className="w-1/3 bg-green-600"></div>
+                </div>
               </div>
             </div>
 
@@ -102,10 +109,10 @@ const Header = () => {
                   <span className="hidden sm:inline">Se déconnecter</span>
                 </Link>
               ) : (
-                <Link to="/portail-citoyens" className="text-base flex items-center gap-1 hover:text-green-600 transition-colors bg-white hover:bg-gray-100 px-3 py-1.5 rounded-md font-medium shadow-sm border border-gray-200">
+                <a href="/#portals" className="text-base flex items-center gap-1 hover:text-green-600 transition-colors bg-white hover:bg-gray-100 px-3 py-1.5 rounded-md font-medium shadow-sm border border-gray-200">
                   <User size={18} />
                   <span className="hidden sm:inline">Se connecter</span>
-                </Link>
+                </a>
               )}
               <div className="flex gap-3">
                 <a href="#" className="hover:text-blue-600 text-xl transition-transform hover:scale-110">
