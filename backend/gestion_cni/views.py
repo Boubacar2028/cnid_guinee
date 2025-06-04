@@ -10,6 +10,10 @@ from .serializers import (
     CitoyenSerializer, AgentSerializer, AdministrateurSerializer,
     ExtraitNaissanceSerializer, DemandeSerializer, CustomTokenObtainPairSerializer
 )
+from .utils import envoyer_email_bienvenue
+import logging
+
+logger = logging.getLogger(__name__)
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
@@ -61,6 +65,22 @@ class CitoyenViewSet(viewsets.ModelViewSet):
         if self.request.user.type_utilisateur in ['admin', 'agent']:
             return Citoyen.objects.all()
         return Citoyen.objects.filter(utilisateur=self.request.user)
+        
+    def perform_create(self, serializer):
+        # Enregistrer le citoyen
+        citoyen = serializer.save()
+        
+        # Envoyer l'email de bienvenue
+        try:
+            logger.info(f"Envoi d'email de bienvenue à {citoyen.utilisateur.email}")
+            envoyer_email_bienvenue(citoyen.utilisateur)
+            logger.info("Email de bienvenue envoyé avec succès")
+        except Exception as e:
+            logger.error(f"Erreur lors de l'envoi de l'email de bienvenue: {e}")
+            # On ne lève pas d'exception pour ne pas bloquer la création du compte
+            # même si l'envoi d'email échoue
+        
+        return citoyen
 
 class AgentViewSet(viewsets.ModelViewSet):
     queryset = Agent.objects.all()

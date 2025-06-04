@@ -77,8 +77,8 @@ const PaiementOptions = ({ onClose, onPaymentComplete }) => {
                       }`}
                       onClick={() => setMethode('orange')}
                     >
-                      <div className="flex-shrink-0 h-10 w-10 bg-orange-500 rounded-full flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">OM</span>
+                      <div className="flex-shrink-0 h-12 w-12 flex items-center justify-center">
+                        <img src="/orange-money.png" alt="Orange Money" className="h-full w-full object-contain" />
                       </div>
                       <div className="ml-3">
                         <p className="font-medium text-gray-900">Orange Money</p>
@@ -91,8 +91,8 @@ const PaiementOptions = ({ onClose, onPaymentComplete }) => {
                       }`}
                       onClick={() => setMethode('mtn')}
                     >
-                      <div className="flex-shrink-0 h-10 w-10 bg-yellow-500 rounded-full flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">MM</span>
+                      <div className="flex-shrink-0 h-12 w-12 flex items-center justify-center">
+                        <img src="/mtn-momo.png" alt="MTN Mobile Money" className="h-full w-full object-contain" />
                       </div>
                       <div className="ml-3">
                         <p className="font-medium text-gray-900">Mobile Money</p>
