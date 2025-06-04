@@ -5,15 +5,14 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.renderers import JSONRenderer
 from django.shortcuts import get_object_or_404
 from django.db.models import Count
-from .models import Citoyen, Agent, Administrateur, ExtraitNaissance, Demande
+import uuid # Pour générer des ID de transaction uniques
+from .models import Citoyen, Agent, Administrateur, ExtraitNaissance, Demande, Paiement # Ajout de Paiement
 from .serializers import (
     CitoyenSerializer, AgentSerializer, AdministrateurSerializer,
-    ExtraitNaissanceSerializer, DemandeSerializer, CustomTokenObtainPairSerializer
+    ExtraitNaissanceSerializer, DemandeSerializer, CustomTokenObtainPairSerializer,
+    PaiementSerializer # Ajout de PaiementSerializer
 )
-from .utils import envoyer_email_bienvenue
-import logging
-
-logger = logging.getLogger(__name__)
+from rest_framework.views import APIView
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
@@ -65,22 +64,6 @@ class CitoyenViewSet(viewsets.ModelViewSet):
         if self.request.user.type_utilisateur in ['admin', 'agent']:
             return Citoyen.objects.all()
         return Citoyen.objects.filter(utilisateur=self.request.user)
-        
-    def perform_create(self, serializer):
-        # Enregistrer le citoyen
-        citoyen = serializer.save()
-        
-        # Envoyer l'email de bienvenue
-        try:
-            logger.info(f"Envoi d'email de bienvenue à {citoyen.utilisateur.email}")
-            envoyer_email_bienvenue(citoyen.utilisateur)
-            logger.info("Email de bienvenue envoyé avec succès")
-        except Exception as e:
-            logger.error(f"Erreur lors de l'envoi de l'email de bienvenue: {e}")
-            # On ne lève pas d'exception pour ne pas bloquer la création du compte
-            # même si l'envoi d'email échoue
-        
-        return citoyen
 
 class AgentViewSet(viewsets.ModelViewSet):
     queryset = Agent.objects.all()
@@ -178,6 +161,78 @@ def get_statistics(request):
     
     logger.info(f"Réponse API statistiques: {response_data}")
     return Response(response_data)
+
+
+# Frais de la CNI (devrait idéalement provenir d'une configuration)
+FRAIS_CNI = 50000  # Montant en GNF
+
+class InitierPaiementView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        demande_id = request.data.get('demande_id')
+        methode_paiement = request.data.get('methode')
+        numero_telephone = request.data.get('numero_telephone_paiement')
+
+        if not all([demande_id, methode_paiement, numero_telephone]):
+            return Response(
+                {'error': 'Les champs demande_id, methode et numero_telephone_paiement sont requis.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            demande = get_object_or_404(Demande, id=demande_id)
+        except Demande.DoesNotExist:
+            return Response(
+                {'error': f'Demande avec ID {demande_id} non trouvée.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Vérifier que l'utilisateur qui fait la requête est bien le citoyen associé à la demande
+        if request.user != demande.citoyen.utilisateur:
+            return Response(
+                {'error': 'Vous n\'êtes pas autorisé à initier un paiement pour cette demande.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Vérifier si un paiement en attente ou complet existe déjà pour cette demande
+        existing_paiement = Paiement.objects.filter(
+            demande=demande,
+            statut__in=['en_attente', 'complete']
+        ).first()
+
+        if existing_paiement:
+            return Response(
+                {'error': 'Un paiement est déjà en cours ou a été complété pour cette demande.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Préparer les données pour le PaiementSerializer
+        paiement_data = {
+            'demande': demande.id,
+            'methode': methode_paiement,
+            'numero_telephone_paiement': numero_telephone,
+            'montant': FRAIS_CNI # Montant défini par le serveur
+        }
+        
+        serializer = PaiementSerializer(data=paiement_data)
+        if serializer.is_valid():
+            # Le serializer.save() va appeler PaiementSerializer.create()
+            # Le montant est maintenant dans validated_data grâce à paiement_data
+            paiement = serializer.save()
+            
+            # Simuler une réponse de l'opérateur de paiement
+            # Dans un vrai scénario, vous appelleriez une API externe ici
+            # Ces champs sont typiquement mis à jour via un callback de la passerelle de paiement
+            paiement.transaction_id = f"TRANS-{uuid.uuid4().hex[:10].upper()}"
+            paiement.statut = 'en_attente' # Le statut initial après initiation
+            paiement.save(update_fields=['transaction_id', 'statut']) # Sauvegarder uniquement les champs modifiés
+
+            return Response(
+                PaiementSerializer(paiement).data,
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])

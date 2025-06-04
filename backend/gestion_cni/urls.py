@@ -9,7 +9,8 @@ from .views import (
     ExtraitNaissanceViewSet,
     DemandeViewSet,
     get_statistics,
-    admin_dashboard
+    admin_dashboard,
+    InitierPaiementView # Ajout de InitierPaiementView
 )
 
 router = DefaultRouter()
@@ -29,6 +30,9 @@ urlpatterns = [
     
     # Endpoint dashboard administrateur
     path('admin/dashboard/', admin_dashboard, name='admin-dashboard'),
+
+    # Endpoint pour initier un paiement
+    path('paiements/initier/', InitierPaiementView.as_view(), name='initier-paiement'),
     
     # Endpoints API
     path('', include(router.urls)),

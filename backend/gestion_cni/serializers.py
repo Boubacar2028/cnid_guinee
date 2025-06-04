@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Citoyen, Agent, Administrateur, ExtraitNaissance, Demande
+from .models import Citoyen, Agent, Administrateur, ExtraitNaissance, Demande, Paiement # Ajout de Paiement
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 Utilisateur = get_user_model()
@@ -149,12 +149,36 @@ class DemandeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Demande
         fields = '__all__'
+        # Champs qui sont remplis automatiquement par le backend ou plus tard dans le processus
+        read_only_fields = ('statut', 'date_soumission', 'date_traitement', 'motif_rejet', 'agent_traitant', 'citoyen')
+
+class PaiementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Paiement
+        fields = ['id', 'demande', 'montant', 'date_paiement', 'methode', 'transaction_id', 'statut', 'numero_telephone_paiement']
+        read_only_fields = ['id', 'date_paiement', 'transaction_id', 'statut']
+
+    def create(self, validated_data):
+        # Le montant pourrait être défini ici en fonction de la demande ou d'une configuration
+        # Par exemple, récupérer FRAIS_CNI depuis les constantes ou un modèle Configuration
+        # Pour l'instant, on pourrait le laisser être envoyé ou le fixer.
+        # Ici, on suppose qu'il sera défini dans la vue ou envoyé.
+        # Si le montant est fixe, on peut le définir ici:
+        # from .models import Configuration # ou depuis un fichier de constantes
+        # validated_data['montant'] = Configuration.get_config('FRAIS_CNI', 50000) 
+        return Paiement.objects.create(**validated_data)
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-        token['type_utilisateur'] = user.type_utilisateur  # Dans le token
+        # Ajouter les informations utilisateur supplémentaires au token
+        token['type_utilisateur'] = user.type_utilisateur
+        token['email'] = user.email
+        token['first_name'] = user.first_name
+        token['last_name'] = user.last_name
+        # user_id est déjà inclus par défaut par simplejwt, donc pas besoin de l'ajouter explicitement ici si c'est le cas.
+        # Si user_id n'est pas dans le token par défaut, vous pouvez l'ajouter : token['user_id'] = user.id
         return token
 
     def validate(self, attrs):

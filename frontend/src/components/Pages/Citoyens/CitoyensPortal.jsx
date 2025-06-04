@@ -1,9 +1,23 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import CitoyenHeader from './CitoyenHeader';
 import { Link, useNavigate } from 'react-router-dom';
 
 const CitoyensPortal = () => {
+  const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const storedUserData = localStorage.getItem('userData');
+    if (storedUserData) {
+      try {
+        setUserData(JSON.parse(storedUserData));
+      } catch (error) {
+        console.error('Erreur parsing userData from localStorage:', error);
+        // Optionnel: gérer l'erreur, par exemple en supprimant les données corrompues
+        localStorage.removeItem('userData');
+      }
+    }
+  }, []);
 
   return (
     <>
@@ -14,7 +28,9 @@ const CitoyensPortal = () => {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Tableau de bord</h1>
-              <p className="text-gray-600 mt-1">Bienvenue, Boubacar Bah</p>
+              <p className="text-gray-600 mt-1">
+                {userData ? `Bienvenue, ${userData.firstName} ${userData.lastName}` : 'Chargement...'}
+              </p>
             </div>
             <button
               onClick={() => navigate('/portail-citoyens/nouvelle-demande')}

@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
+import { API_URL } from '../../constants';
 import { CreditCard, CheckCircle, DollarSign, RefreshCw } from 'lucide-react';
 
-const PaiementOptions = ({ onClose, onPaymentComplete }) => {
+const PaiementOptions = ({ demandeId, onClose, onPaymentComplete }) => {
   const [methode, setMethode] = useState('');
   const [numero, setNumero] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -16,16 +18,57 @@ const PaiementOptions = ({ onClose, onPaymentComplete }) => {
     
     setLoading(true);
     
-    // Simuler un appel API de paiement
-    setTimeout(() => {
+    setPaymentError(''); // Réinitialiser l'erreur
+
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      setPaymentError('Authentification requise. Veuillez vous reconnecter.');
       setLoading(false);
-      setSuccess(true);
+      return;
+    }
+
+    // Mapper les valeurs de méthode pour le backend si nécessaire
+    const methodeBackend = methode === 'orange' ? 'orange_money' : (methode === 'mtn' ? 'mobile_money' : '');
+    if (!methodeBackend) {
+        setPaymentError('Méthode de paiement invalide.');
+        setLoading(false);
+        return;
+    }
+
+    fetch(`${API_URL}/api/paiements/initier/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        demande_id: demandeId,
+        methode: methodeBackend,
+        numero_telephone_paiement: numero,
+      }),
+    })
+    .then(async res => {
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ detail: 'Erreur inconnue lors de la communication avec le serveur.' }));
+        throw new Error(errorData.detail || errorData.error || `Erreur ${res.status}`);
+      }
+      return res.json();
+    })
+    .then(data => {
+      setLoading(false);
+      setSuccess(true); // Le paiement est initié, en attente de confirmation de l'utilisateur
+      // On pourrait stocker data.transaction_id si besoin de vérifier le statut plus tard
       
-      // Notifier le composant parent du paiement réussi après 2 secondes
+      // Pour l'instant, on considère que l'initiation est suffisante pour appeler onPaymentComplete
+      // Dans un vrai scénario, on attendrait un webhook ou une confirmation de la passerelle
       setTimeout(() => {
-        onPaymentComplete();
-      }, 2000);
-    }, 1500);
+        onPaymentComplete(); 
+      }, 2500); // Délai pour que l'utilisateur voie le message de succès
+    })
+    .catch(error => {
+      setLoading(false);
+      setPaymentError(error.message || 'Une erreur est survenue lors de l\'initiation du paiement.');
+    });
   };
 
   return (
@@ -34,16 +77,22 @@ const PaiementOptions = ({ onClose, onPaymentComplete }) => {
         {success ? (
           <div className="p-8 text-center">
             <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
-            <h2 className="text-2xl font-bold mt-4 mb-2">Paiement réussi !</h2>
+            <h2 className="text-2xl font-bold mt-4 mb-2">Paiement Initié !</h2>
             <p className="text-gray-600 mb-6">
-              Votre paiement a été traité avec succès. Vous recevrez un message de confirmation par SMS.
+              Votre demande de paiement a été envoyée.
+              Veuillez valider la transaction sur votre téléphone mobile ({numero}) via {methode === 'orange' ? 'Orange Money' : 'Mobile Money'}.
             </p>
             <p className="text-sm text-gray-500 mb-6">
-              Votre demande a été enregistrée. Vous serez notifié pour la suite des démarches.
+              Une fois le paiement confirmé, votre demande sera finalisée.
             </p>
           </div>
         ) : (
           <>
+            {paymentError && (
+              <div className="p-4 bg-red-50 border-l-4 border-red-400">
+                <p className="text-sm text-red-700">{paymentError}</p>
+              </div>
+            )}
             <div className="p-6 border-b border-gray-200">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold text-gray-900 flex items-center">
@@ -77,8 +126,8 @@ const PaiementOptions = ({ onClose, onPaymentComplete }) => {
                       }`}
                       onClick={() => setMethode('orange')}
                     >
-                      <div className="flex-shrink-0 h-12 w-12 flex items-center justify-center">
-                        <img src="/orange-money.png" alt="Orange Money" className="h-full w-full object-contain" />
+                      <div className="flex-shrink-0 h-10 w-10 bg-orange-500 rounded-full flex items-center justify-center">
+                        <span className="text-white font-bold text-sm">OM</span>
                       </div>
                       <div className="ml-3">
                         <p className="font-medium text-gray-900">Orange Money</p>
@@ -91,8 +140,8 @@ const PaiementOptions = ({ onClose, onPaymentComplete }) => {
                       }`}
                       onClick={() => setMethode('mtn')}
                     >
-                      <div className="flex-shrink-0 h-12 w-12 flex items-center justify-center">
-                        <img src="/mtn-momo.png" alt="MTN Mobile Money" className="h-full w-full object-contain" />
+                      <div className="flex-shrink-0 h-10 w-10 bg-yellow-500 rounded-full flex items-center justify-center">
+                        <span className="text-white font-bold text-sm">MM</span>
                       </div>
                       <div className="ml-3">
                         <p className="font-medium text-gray-900">Mobile Money</p>

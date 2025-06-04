@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { jwtDecode } from 'jwt-decode'; // Importer jwt-decode
 
 const AuthPage = () => {
   const [step, setStep] = useState(1);
@@ -62,7 +63,7 @@ const AuthPage = () => {
       // Utiliser l'email comme username pour l'authentification JWT
       console.log('Tentative de connexion avec:', { username: formData.email, password: formData.password });
       
-      const response = await axios.post('http://localhost:8000/api/auth/token/', {
+      const response = await axios.post('http://localhost:8000/api/token/', {
         username: formData.email,
         password: formData.password
       });
@@ -72,6 +73,25 @@ const AuthPage = () => {
       localStorage.setItem('access_token', response.data.access);
       localStorage.setItem('refresh_token', response.data.refresh);
       localStorage.setItem('user_type', response.data.type_utilisateur);
+
+      // Décoder le token pour obtenir les informations utilisateur
+      try {
+        const decodedToken = jwtDecode(response.data.access);
+        console.log('Token décodé:', decodedToken);
+        const userData = {
+          userId: decodedToken.user_id, // Assurez-vous que c'est bien 'user_id' dans votre token
+          email: decodedToken.email,       // et 'email', 'first_name', 'last_name'
+          firstName: decodedToken.first_name,
+          lastName: decodedToken.last_name,
+          // Ajoutez d'autres champs si présents et utiles
+        };
+        localStorage.setItem('userData', JSON.stringify(userData));
+        console.log('Données utilisateur stockées dans localStorage:', userData);
+      } catch (decodeError) {
+        console.error('Erreur lors du décodage du token ou de la récupération des infos utilisateur:', decodeError);
+        // Optionnel: Gérer l'erreur, par exemple ne pas stocker userData ou afficher un message
+      }
+
       
       // Redirection en fonction du type d'utilisateur
       if (response.data.type_utilisateur === 'citoyen') {

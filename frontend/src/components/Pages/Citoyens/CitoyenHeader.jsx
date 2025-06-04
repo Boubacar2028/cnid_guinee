@@ -1,11 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Bell, Menu, X, User, HelpCircle, FileText, Home, Calendar } from 'lucide-react';
 
 const CitoyenHeader = () => {
+  const [userData, setUserData] = useState(null);
+  const navigate = useNavigate();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const storedUserData = localStorage.getItem('userData');
+    if (storedUserData) {
+      try {
+        setUserData(JSON.parse(storedUserData));
+      } catch (error) {
+        console.error('Erreur parsing userData from localStorage:', error);
+        localStorage.removeItem('userData'); // Supprimer les données corrompues
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user_type');
+    localStorage.removeItem('userData');
+    setUserData(null); // Réinitialiser l'état local
+    navigate('/'); // Rediriger vers la page d'accueil/connexion
+  };
   const location = useLocation();
   
   // Déterminer la page active
@@ -103,9 +126,9 @@ const CitoyenHeader = () => {
                 className="flex items-center space-x-2 focus:outline-none p-1 rounded-full hover:bg-gray-50 transition-colors"
               >
                 <div className="h-9 w-9 rounded-full bg-gradient-to-r from-red-600 to-red-500 flex items-center justify-center text-white font-medium ring-2 ring-white shadow-sm">
-                  BB
+                  {userData && userData.firstName && userData.lastName ? `${userData.firstName.charAt(0).toUpperCase()}${userData.lastName.charAt(0).toUpperCase()}` : 'U'}
                 </div>
-                <span className="hidden sm:inline text-gray-700 font-medium text-sm md:text-base">Boubacar Bah</span>
+                <span className="hidden sm:inline text-gray-700 font-medium text-sm md:text-base">{userData ? `${userData.firstName} ${userData.lastName}` : 'Chargement...'}</span>
                 <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-gray-500 transition-transform duration-300 ${isProfileMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
@@ -115,19 +138,19 @@ const CitoyenHeader = () => {
               {isProfileMenuOpen && (
                 <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl py-2 z-10 border border-gray-100 animate-fadeIn">
                   <div className="px-4 py-2 border-b border-gray-100">
-                    <p className="text-sm font-medium text-gray-900">Boubacar Bah</p>
-                    <p className="text-xs text-gray-500">citoyen@example.com</p>
+                    <p className="text-sm font-medium text-gray-900">{userData ? `${userData.firstName} ${userData.lastName}` : 'Chargement...'}</p>
+                    <p className="text-xs text-gray-500">{userData ? userData.email : 'email@example.com'}</p>
                   </div>
                   <Link to="/portail-citoyens/profil" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                     <User size={16} className="mr-2 text-gray-500" />
                     Mon profil
                   </Link>
-                  <Link to="/" className="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                  <button onClick={handleLogout} className="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
                     Se déconnecter
-                  </Link>
+                  </button>
                 </div>
               )}
             </div>

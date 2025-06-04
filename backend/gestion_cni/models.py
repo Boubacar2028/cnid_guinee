@@ -184,9 +184,11 @@ class Demande(models.Model):
         on_delete=models.CASCADE,
         related_name='demandes'
     )
-    extrait = models.ForeignKey(  # Nouvelle relation
+    extrait = models.ForeignKey(
         'ExtraitNaissance',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL, 
+        null=True,                 # Permet NULL dans la base de données
+        blank=True,                # Permet au champ d'être vide dans les formulaires Django (admin)
         verbose_name="Extrait de naissance associé"
     )
     agent_traitant = models.ForeignKey(  # Nouvelle relation
@@ -312,6 +314,12 @@ class Paiement(models.Model):
         max_length=20,
         choices=STATUT_CHOICES,
         default='en_attente'
+    )
+    numero_telephone_paiement = models.CharField(
+        max_length=20, 
+        null=True, 
+        blank=True, 
+        verbose_name="Numéro de téléphone du paiement"
     )
 
     class Meta:

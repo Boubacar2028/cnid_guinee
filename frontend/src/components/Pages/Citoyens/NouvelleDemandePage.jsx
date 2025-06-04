@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
 import CitoyenHeader from './CitoyenHeader';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Loader2 } from 'lucide-react';
 import DemandeEtapes from './DemandeEtapes';
 import PaiementOptions from './PaiementOptions';
+import { API_URL } from '../../constants';
 
 const NouvelleDemandePage = () => {
   const [etape, setEtape] = useState(1);
   const [fichierSelectionne, setFichierSelectionne] = useState(null);
   const [showPaiement, setShowPaiement] = useState(false);
   const [demandeComplete, setDemandeComplete] = useState(false);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState(null);
+  const [createdDemandeNumeroSuivi, setCreatedDemandeNumeroSuivi] = useState(null);
+  const [createdDemandeId, setCreatedDemandeId] = useState(null); // ID de la demande pour le paiement
   
   // État unique pour toutes les données du formulaire
   const [formData, setFormData] = useState({
@@ -47,9 +53,56 @@ const NouvelleDemandePage = () => {
   };
 
   // Gestion de la soumission du formulaire
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setShowPaiement(true);
+    setIsSubmitting(true);
+    setSubmissionError(null);
+
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      setSubmissionError("Vous n'êtes pas authentifié. Veuillez vous reconnecter.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Pour l'instant, nous envoyons uniquement le type de demande.
+    // TODO: Étendre pour envoyer toutes les données du formulaire (formData)
+    const demandeData = {
+      type_demande: formData.typeDemande,
+    };
+
+    try {
+      const response = await fetch(`${API_URL}/api/demandes/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(demandeData),
+      });
+
+      if (response.status === 201) {
+        const data = await response.json();
+        setCreatedDemandeNumeroSuivi(data.numero_suivi || `CNI-${data.id}`);
+        setCreatedDemandeId(data.id); // Stocker l'ID de la demande pour le paiement
+        setShowPaiement(true); // Afficher les options de paiement 
+      } else {
+        const errorData = await response.json();
+        let errorMessage = "Une erreur est survenue lors de la création de la demande.";
+        if (errorData && typeof errorData === 'object') {
+          // Essayer de trouver un message d'erreur plus spécifique
+          if (errorData.detail) errorMessage = errorData.detail;
+          else if (errorData.message) errorMessage = errorData.message;
+          else if (Object.keys(errorData).length > 0) errorMessage = JSON.stringify(errorData);
+        }
+        setSubmissionError(errorMessage + ` (Statut: ${response.status})`);
+      }
+    } catch (error) {
+      console.error('Erreur de soumission de la demande:', error);
+      setSubmissionError('Une erreur réseau est survenue. Veuillez réessayer.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   // Gestion de la fermeture de la fenêtre de paiement
@@ -85,7 +138,7 @@ const NouvelleDemandePage = () => {
               </p>
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 inline-block">
                 <p className="text-sm text-blue-800 font-medium">Numéro de suivi:</p>
-                <p className="text-lg font-mono font-bold">CNI-{Math.floor(100000 + Math.random() * 900000)}</p>
+                <p className="text-lg font-mono font-bold">{createdDemandeNumeroSuivi || 'N/A'}</p>
               </div>
             </div>
           </div>
@@ -173,6 +226,13 @@ const NouvelleDemandePage = () => {
                   fichierSelectionne={fichierSelectionne}
                   setFichierSelectionne={setFichierSelectionne}
                 />
+
+                {submissionError && (
+                  <div className="mt-6 p-4 bg-red-100 text-red-700 border border-red-300 rounded-lg text-sm">
+                    <p className="font-semibold mb-1">Erreur lors de la soumission :</p>
+                    <p>{submissionError}</p>
+                  </div>
+                )}
                 
                 {/* Boutons de navigation */}
                 <div className="flex justify-between pt-4 border-t border-gray-100">
@@ -181,6 +241,7 @@ const NouvelleDemandePage = () => {
                       type="button"
                       onClick={() => setEtape(etape - 1)}
                       className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                      disabled={isSubmitting}
                     >
                       Précédent
                     </button>
@@ -191,8 +252,8 @@ const NouvelleDemandePage = () => {
                       <button
                         type="button"
                         onClick={() => setEtape(etape + 1)}
-                        className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center ${!formData.typeDemande && etape === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        disabled={!formData.typeDemande && etape === 1}
+                        className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center ${(!formData.typeDemande && etape === 1) || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        disabled={(!formData.typeDemande && etape === 1) || isSubmitting}
                       >
                         Suivant
                         <ChevronRight size={16} className="ml-1" />
@@ -200,9 +261,17 @@ const NouvelleDemandePage = () => {
                     ) : (
                       <button
                         type="submit"
-                        className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                        className={`px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center justify-center w-full md:w-auto ${isSubmitting ? 'opacity-75 cursor-not-allowed' : ''}`}
+                        disabled={isSubmitting}
                       >
-                        Soumettre la demande
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 size={20} className="animate-spin mr-2" />
+                            Soumission en cours...
+                          </>
+                        ) : (
+                          'Soumettre la demande'
+                        )}
                       </button>
                     )}
                   </div>
@@ -214,8 +283,9 @@ const NouvelleDemandePage = () => {
       )}
       
       {/* Composant de paiement */}
-      {showPaiement && (
+      {showPaiement && createdDemandeId && (
         <PaiementOptions
+          demandeId={createdDemandeId} // Passer l'ID de la demande
           onClose={handleClosePaiement}
           onPaymentComplete={handlePaymentComplete}
         />

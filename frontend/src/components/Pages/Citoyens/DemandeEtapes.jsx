@@ -15,16 +15,16 @@ const DemandeEtapes = ({ etape, setEtape, formData, handleChange, fichierSelecti
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div
               className={`p-4 border rounded-lg cursor-pointer hover:bg-blue-50 transition-colors ${
-                formData.typeDemande === 'nouvelle' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                formData.typeDemande === 'premiere' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
               }`}
-              onClick={() => handleChange('typeDemande', 'nouvelle')}
+              onClick={() => handleChange('typeDemande', 'premiere')}
             >
               <div className="flex justify-between items-start">
                 <div className="flex items-center">
                   <PlusCircle size={20} className="text-blue-600 mr-2" />
                   <h3 className="font-medium text-gray-900">Première demande</h3>
                 </div>
-                {formData.typeDemande === 'nouvelle' && <Check size={20} className="text-blue-500" />}
+                {formData.typeDemande === 'premiere' && <Check size={20} className="text-blue-500" />}
               </div>
               <p className="mt-1 text-sm text-gray-500 pl-7">
                 Pour une première demande de carte nationale d'identité
@@ -470,7 +470,7 @@ const DemandeEtapes = ({ etape, setEtape, formData, handleChange, fichierSelecti
               <div>
                 <p className="text-sm text-gray-500">Type de demande</p>
                 <p className="font-medium">
-                  {formData.typeDemande === 'nouvelle' ? 'Première demande' : 
+                  {formData.typeDemande === 'premiere' ? 'Première demande' : 
                    formData.typeDemande === 'renouvellement' ? 'Renouvellement' : 'Perte ou vol'}
                 </p>
               </div>
