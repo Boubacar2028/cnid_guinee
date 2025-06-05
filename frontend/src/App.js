@@ -14,6 +14,7 @@ import NouvelleDemandePage from './components/Pages/Citoyens/NouvelleDemandePage
 import HistoriquePage from './components/Pages/Citoyens/HistoriquePage';
 import AidePage from './components/Pages/Citoyens/AidePage';
 import ProfilePage from './components/Pages/Citoyens/ProfilePage';
+import DemandeDetailPage from './components/Pages/Citoyens/DemandeDetailPage'; // Ajout de l'import
 
 // Composant pour gérer l'affichage conditionnel du header
 const AppContent = () => {
@@ -41,6 +42,7 @@ const AppContent = () => {
           <Route path="/portail-citoyens/historique" element={<HistoriquePage />} />
           <Route path="/portail-citoyens/aide" element={<AidePage />} />
           <Route path="/portail-citoyens/profil" element={<ProfilePage />} />
+          <Route path="/portail-citoyens/demandes/:demandeId" element={<DemandeDetailPage />} /> {/* Nouvelle route pour les détails de la demande */}
           
           {/* Routes pour les autres portails */}
           <Route path="/portail-agents/*" element={<AgentRoutes />} />

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Citoyen, Agent, Administrateur, ExtraitNaissance, Demande, Paiement # Ajout de Paiement
+from .models import Citoyen, Agent, Administrateur, ExtraitNaissance, Demande, Paiement, Notification, Document # Ajout de Document
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 Utilisateur = get_user_model()
@@ -145,12 +145,76 @@ class ExtraitNaissanceSerializer(serializers.ModelSerializer):
         model = ExtraitNaissance
         fields = '__all__'
 
+
+class DocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Document
+        fields = ['id', 'nom_fichier', 'type_document', 'fichier', 'date_upload']
+        read_only_fields = ['id', 'date_upload']
+
 class DemandeSerializer(serializers.ModelSerializer):
+    citoyen = CitoyenSerializer(read_only=True)
+    documents = DocumentSerializer(many=True, read_only=True)
+    libelle_type_demande = serializers.CharField(source='get_type_demande_display', read_only=True)
+    libelle_statut = serializers.CharField(source='get_statut_display', read_only=True)
+    date_soumission_formatee = serializers.DateTimeField(source='date_soumission', format="%d/%m/%Y", read_only=True)
+    date_mise_a_jour = serializers.SerializerMethodField() # Pour "Mis à jour il y a..."
+    nombre_documents = serializers.SerializerMethodField()
+
     class Meta:
         model = Demande
-        fields = '__all__'
-        # Champs qui sont remplis automatiquement par le backend ou plus tard dans le processus
-        read_only_fields = ('statut', 'date_soumission', 'date_traitement', 'motif_rejet', 'agent_traitant', 'citoyen')
+        fields = [
+            'id',
+            'citoyen', # Remplacer nom_demandeur par l'objet citoyen complet
+            'type_demande', # Valeur brute ex: "premiere_demande"
+            'libelle_type_demande', # ex: "Première demande"
+            'statut', # Valeur brute ex: "en_cours"
+            'libelle_statut', # ex: "En cours de traitement"
+            'date_soumission', # Date brute pour calculs et tri
+            'date_soumission_formatee', # ex: "15/11/2023"
+            'date_traitement', # Date brute de la dernière action de traitement
+            'date_mise_a_jour', # Sera date_traitement ou date_soumission pour affichage "Mis à jour il y a..."
+            'motif_rejet',
+            # Champs spécifiques au formulaire de demande CNI (à adapter selon votre modèle Demande)
+            'nom_sur_cni',
+            'prenom_sur_cni',
+            'date_naissance_sur_cni',
+            'lieu_naissance_sur_cni',
+            'sexe_sur_cni',
+            'taille_sur_cni',
+            'profession_sur_cni',
+            'adresse_residence_sur_cni',
+            'nom_pere_sur_cni',
+            'nom_mere_sur_cni',
+            'numero_extrait_naissance',
+            'photo_fournie', # URL du fichier image
+            'signature_fournie', # URL du fichier image
+            'nombre_documents', # Nombre de documents (méthode)
+            'documents', # Liste des documents sérialisés
+            # 'agent_traitant' # Pourrait être l'ID ou un serializer léger de l'agent
+        ]
+        # Ces champs sont soit calculés, soit définis par le système pour l'affichage des demandes.
+        read_only_fields = (
+            'id', 'citoyen', 'libelle_type_demande', 'libelle_statut',
+            'date_soumission_formatee', 'date_mise_a_jour', 'nombre_documents',
+            'date_soumission', 'statut', 'date_traitement', 'motif_rejet',
+            'documents', 'photo_fournie', 'signature_fournie'
+            # Les champs CNI sont aussi read_only une fois la demande soumise
+            # et modifiables uniquement par des agents via des actions spécifiques.
+            # Pour la vue citoyen, ils sont toujours read-only.
+        )
+
+
+
+    def get_nombre_documents(self, obj):
+        # Assure que la relation 'documents' existe sur le modèle Demande
+        return obj.documents.count()
+
+    def get_date_mise_a_jour(self, obj):
+        # La "dernière mise à jour" pertinente pour l'affichage est souvent la date de traitement.
+        # Si non traitée, la date de soumission est la plus récente.
+        # Le modèle Demande a date_soumission (auto_now_add) et date_traitement (DateTimeField)
+        return obj.date_traitement if obj.date_traitement else obj.date_soumission
 
 class PaiementSerializer(serializers.ModelSerializer):
     class Meta:
@@ -205,3 +269,26 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         except Exception as e:
             logger.error(f"Erreur d'authentification: {str(e)}")
             raise
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    # Si vous voulez afficher l'ID de la demande plutôt que l'objet Demande entier
+    demande_id = serializers.PrimaryKeyRelatedField(source='demande.id', read_only=True, allow_null=True)
+    # Si vous voulez un champ plus lisible pour la date
+    date_envoi_formatee = serializers.DateTimeField(source='date_envoi', format="%d-%m-%Y %H:%M", read_only=True)
+    statut_display = serializers.CharField(source='get_statut_display', read_only=True)
+
+
+    class Meta:
+        model = Notification
+        fields = [
+            'id', 
+            'contenu', 
+            'date_envoi', # Date brute si besoin
+            'date_envoi_formatee', # Date formatée pour affichage
+            'statut', # Statut brut
+            'statut_display', # Statut lisible
+            'demande_id', # ID de la demande associée
+            # 'citoyen_id' # Peut être utile si vous ne filtrez pas déjà par citoyen
+        ]
+        read_only_fields = fields # Toutes les notifications sont en lecture seule via API pour le citoyen

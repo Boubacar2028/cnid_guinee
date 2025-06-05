@@ -211,7 +211,32 @@ class Demande(models.Model):
     )
     date_soumission = models.DateTimeField(auto_now_add=True)
     date_traitement = models.DateTimeField(null=True, blank=True)
-    motif_rejet = models.TextField(blank=True)
+    motif_rejet = models.TextField(blank=True, null=True, verbose_name="Motif du rejet")
+
+    # Champs spécifiques au formulaire de demande CNI (informations au moment de la demande)
+    nom_sur_cni = models.CharField(max_length=100, blank=True, null=True, verbose_name="Nom tel qu'il figurera sur la CNI")
+    prenom_sur_cni = models.CharField(max_length=100, blank=True, null=True, verbose_name="Prénom tel qu'il figurera sur la CNI")
+    date_naissance_sur_cni = models.DateField(blank=True, null=True, verbose_name="Date de naissance pour la CNI")
+    lieu_naissance_sur_cni = models.CharField(max_length=100, blank=True, null=True, verbose_name="Lieu de naissance pour la CNI")
+    sexe_sur_cni = models.CharField(max_length=1, choices=Citoyen.SEXE_CHOICES, blank=True, null=True, verbose_name="Sexe pour la CNI")
+    nationalite_sur_cni = models.CharField(max_length=50, blank=True, null=True, verbose_name="Nationalité pour la CNI")
+    adresse_residence_sur_cni = models.CharField(max_length=255, blank=True, null=True, verbose_name="Adresse de résidence pour la CNI")
+    profession_sur_cni = models.CharField(max_length=100, blank=True, null=True, verbose_name="Profession pour la CNI")
+    situation_matrimoniale_sur_cni = models.CharField(max_length=20, choices=Citoyen.SITUATION_CHOICES, blank=True, null=True, verbose_name="Situation matrimoniale pour la CNI")
+    nom_pere_sur_cni = models.CharField(max_length=100, blank=True, null=True, verbose_name="Nom du père pour la CNI")
+    nom_mere_sur_cni = models.CharField(max_length=100, blank=True, null=True, verbose_name="Nom de la mère pour la CNI")
+    taille_sur_cni = models.PositiveIntegerField(blank=True, null=True, verbose_name="Taille (cm) pour la CNI")
+    numero_extrait_naissance = models.CharField(max_length=100, blank=True, null=True, verbose_name="Numéro de l'extrait de naissance pour la CNI")
+    photo_fournie = models.ImageField(upload_to='demandes_photos/', blank=True, null=True, verbose_name="Photo fournie pour la demande")
+    signature_fournie = models.ImageField(upload_to='demandes_signatures/', blank=True, null=True, verbose_name="Signature fournie pour la demande")
+
+    # Champs pour renouvellement ou duplicata
+    numero_cni_precedent = models.CharField(max_length=50, blank=True, null=True, verbose_name="Numéro CNI précédente")
+    date_delivrance_cni_precedent = models.DateField(blank=True, null=True, verbose_name="Date de délivrance CNI précédente")
+    
+    # Champs spécifiques au duplicata
+    motif_duplicata = models.TextField(blank=True, null=True, verbose_name="Motif du duplicata")
+    declaration_perte = models.FileField(upload_to='declarations_perte/', blank=True, null=True, verbose_name="Déclaration de perte")
 
     class Meta:
         ordering = ['-date_soumission']

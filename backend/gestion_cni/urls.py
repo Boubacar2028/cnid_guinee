@@ -10,7 +10,12 @@ from .views import (
     DemandeViewSet,
     get_statistics,
     admin_dashboard,
-    InitierPaiementView # Ajout de InitierPaiementView
+    InitierPaiementView, 
+    UserNotificationsView,
+    MarkNotificationAsReadView,
+    TelechargerRecuView,
+    UserDemandesView,
+    DemandeDetailView # Ajout de DemandeDetailView
 )
 
 router = DefaultRouter()
@@ -32,7 +37,14 @@ urlpatterns = [
     path('admin/dashboard/', admin_dashboard, name='admin-dashboard'),
 
     # Endpoint pour initier un paiement
-    path('paiements/initier/', InitierPaiementView.as_view(), name='initier-paiement'),
+    path('initier-paiement/', InitierPaiementView.as_view(), name='initier_paiement'),
+
+    # Endpoint pour les notifications de l'utilisateur
+    path('notifications/', UserNotificationsView.as_view(), name='user_notifications'),
+    path('notifications/<int:pk>/mark-as-read/', MarkNotificationAsReadView.as_view(), name='notification_mark_as_read'),
+    path('notifications/<int:pk>/telecharger-recu/', TelechargerRecuView.as_view(), name='notification_telecharger_recu'),
+    path('mes-demandes/', UserDemandesView.as_view(), name='user_demandes_list'),
+    path('demandes/<int:pk>/', DemandeDetailView.as_view(), name='demande-detail'),
     
     # Endpoints API
     path('', include(router.urls)),

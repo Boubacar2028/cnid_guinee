@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status, generics
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -6,13 +6,27 @@ from rest_framework.renderers import JSONRenderer
 from django.shortcuts import get_object_or_404
 from django.db.models import Count
 import uuid # Pour générer des ID de transaction uniques
-from .models import Citoyen, Agent, Administrateur, ExtraitNaissance, Demande, Paiement # Ajout de Paiement
+from .models import Citoyen, Agent, Administrateur, ExtraitNaissance, Demande, Notification, Paiement
+from django.http import HttpResponse
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import inch
+from django.shortcuts import get_object_or_404
+from .models import Demande # Ajout de l'import Demande
 from .serializers import (
     CitoyenSerializer, AgentSerializer, AdministrateurSerializer,
     ExtraitNaissanceSerializer, DemandeSerializer, CustomTokenObtainPairSerializer,
-    PaiementSerializer # Ajout de PaiementSerializer
+    PaiementSerializer, NotificationSerializer # Ajout de PaiementSerializer et NotificationSerializer
 )
 from rest_framework.views import APIView
+from rest_framework.generics import ListAPIView, UpdateAPIView, RetrieveAPIView
+from rest_framework.exceptions import PermissionDenied
+from django.core.mail import send_mail
+from django.conf import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
@@ -166,6 +180,168 @@ def get_statistics(request):
 # Frais de la CNI (devrait idéalement provenir d'une configuration)
 FRAIS_CNI = 50000  # Montant en GNF
 
+
+class UserNotificationsView(ListAPIView):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        try:
+            # Tenter de récupérer le profil citoyen associé à l'utilisateur
+            citoyen_profile = Citoyen.objects.get(utilisateur=user)
+            # Utiliser date_envoi ou date_creation selon le champ pertinent dans votre modèle Notification
+            return Notification.objects.filter(citoyen=citoyen_profile).order_by('-date_envoi') 
+        except Citoyen.DoesNotExist:
+            # Si l'utilisateur n'a pas de profil citoyen, retourner un queryset vide
+            logger.info(f"Tentative d'accès aux notifications pour l'utilisateur {user.username} sans profil citoyen.")
+            return Notification.objects.none()
+        except Exception as e:
+            # Log l'erreur pour le débogage et retourner un queryset vide
+            logger.error(f"Erreur lors de la récupération des notifications pour {user.username}: {e}")
+            return Notification.objects.none()
+
+
+class MarkNotificationAsReadView(generics.UpdateAPIView):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'pk'
+
+    def get_queryset(self):
+        user = self.request.user
+        try:
+            citoyen_profile = Citoyen.objects.get(utilisateur=user)
+            return Notification.objects.filter(citoyen=citoyen_profile)
+        except Citoyen.DoesNotExist:
+            # Si l'utilisateur n'a pas de profil citoyen, retourner un queryset vide
+            # pour éviter que d'autres utilisateurs ne modifient les notifications.
+            logger.warning(f"Tentative de marquer comme lue une notification pour {user.username} sans profil citoyen.")
+            return Notification.objects.none()
+        except Exception as e:
+            logger.error(f"Erreur lors de la récupération du queryset pour MarkNotificationAsReadView pour {user.username}: {e}")
+            return Notification.objects.none()
+
+    # get_object est hérité et utilisera le queryset filtré ci-dessus.
+    # Il lèvera une erreur 404 si l'objet n'est pas trouvé ou n'appartient pas à l'utilisateur.
+
+    def perform_update(self, serializer):
+        # La logique de mise à jour est simple : marquer la notification comme 'lue'.
+        # Le serializer s'occupe de la validation si nécessaire, mais ici c'est direct.
+        instance = serializer.instance # Récupère l'objet Notification à mettre à jour
+        if instance.statut != 'lue':
+            instance.statut = 'lue'
+            instance.save(update_fields=['statut'])
+        # La réponse par défaut de UpdateAPIView (l'objet sérialisé) est généralement suffisante.
+
+
+class UserDemandesView(generics.ListAPIView):
+    serializer_class = DemandeSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        try:
+            citoyen_profile = Citoyen.objects.get(utilisateur=user)
+            # Récupérer les demandes et précharger les documents pour optimiser la méthode get_nombre_documents du serializer
+            return Demande.objects.filter(citoyen=citoyen_profile).prefetch_related('documents').order_by('-date_soumission')
+        except Citoyen.DoesNotExist:
+            # Si aucun profil citoyen n'est associé à l'utilisateur,
+            # retourner un queryset vide pour éviter les erreurs.
+            return Demande.objects.none()
+        except Exception as e:
+            logger.error(f"Erreur lors de la récupération des demandes pour {user.username}: {e}")
+            return Demande.objects.none()
+
+
+class DemandeDetailView(generics.RetrieveAPIView):
+    queryset = Demande.objects.all()
+    serializer_class = DemandeSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        obj = super().get_object()
+        user = self.request.user
+        # Vérifier si l'utilisateur est le citoyen associé à la demande
+        if hasattr(user, 'citoyen') and obj.citoyen == user.citoyen:
+            return obj
+        # Si l'utilisateur est un agent ou admin, il pourrait aussi y avoir accès
+        # (décommenter et adapter si nécessaire pour les rôles admin/agent)
+        # elif hasattr(user, 'agent') or hasattr(user, 'administrateur'):
+        #     return obj
+        else:
+            # Si l'utilisateur n'est ni le propriétaire ni un rôle autorisé, refuser l'accès.
+            raise permissions.PermissionDenied("Vous n'avez pas la permission de voir cette demande.")
+
+
+class TelechargerRecuView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        user = request.user
+        try:
+            # S'assurer que la notification appartient au citoyen connecté
+            citoyen_profile = Citoyen.objects.get(utilisateur=user)
+            notification = get_object_or_404(Notification, pk=pk, citoyen=citoyen_profile)
+            
+            demande = notification.demande
+            if not demande:
+                return Response({"error": "Demande associée non trouvée."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Essayer de récupérer le paiement associé à la demande
+            # S'il peut y avoir plusieurs paiements, il faudra affiner cette logique
+            paiement = Paiement.objects.filter(demande=demande).order_by('-date_paiement').first()
+            if not paiement:
+                return Response({"error": "Paiement associé non trouvé."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Création du document PDF
+            response = HttpResponse(content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="recu_paiement_CNID-{demande.id}.pdf"'
+
+            doc = SimpleDocTemplate(response, pagesize=letter, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
+            styles = getSampleStyleSheet()
+            story = []
+
+            # Titre
+            story.append(Paragraph("REÇU DE PAIEMENT", styles['h1']))
+            story.append(Spacer(1, 0.25*inch))
+
+            # Informations
+            nom_complet_citoyen = f"{citoyen_profile.utilisateur.first_name or ''} {citoyen_profile.utilisateur.last_name or ''}".strip()
+            montant_formate = f"{int(paiement.montant)} GNF"
+            reference_demande_formatee = f"CNID-{demande.id}"
+            date_paiement_formatee = paiement.date_paiement.strftime('%d-%m-%Y %H:%M')
+
+            details = [
+                f"<b>Nom du Citoyen:</b> {nom_complet_citoyen}",
+                f"<b>Référence de la Demande:</b> {reference_demande_formatee}",
+                f"<b>Montant Payé:</b> {montant_formate}",
+                f"<b>Date de Paiement:</b> {date_paiement_formatee}",
+            ]
+
+            for detail in details:
+                story.append(Paragraph(detail, styles['Normal']))
+                story.append(Spacer(1, 0.1*inch))
+            
+            story.append(Spacer(1, 0.25*inch))
+            story.append(Paragraph("Merci d'avoir utilisé notre plateforme.", styles['Normal']))
+            story.append(Paragraph("— Direction Générale de la CNID", styles['Normal']))
+
+            doc.build(story)
+            return response
+
+        except Citoyen.DoesNotExist:
+            return Response({"error": "Profil citoyen non trouvé."}, status=status.HTTP_404_NOT_FOUND)
+        except Notification.DoesNotExist:
+            return Response({"error": "Notification non trouvée ou non autorisée."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            logger.error(f"Erreur lors de la génération du reçu PDF pour la notification {pk}: {e}")
+            return Response({"error": "Erreur lors de la génération du reçu."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Vue pour lister les demandes du citoyen connecté
+# Déplacée ici pour être avant InitierPaiementView, mais l'ordre global des classes n'est pas critique
+# tant que les imports sont corrects.
+
 class InitierPaiementView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -228,8 +404,75 @@ class InitierPaiementView(APIView):
             paiement.statut = 'en_attente' # Le statut initial après initiation
             paiement.save(update_fields=['transaction_id', 'statut']) # Sauvegarder uniquement les champs modifiés
 
+            # --- Début de la mise à jour pour notification et email ---
+            utilisateur_concerne = demande.citoyen.utilisateur
+            nom_complet_citoyen = f"{utilisateur_concerne.first_name or ''} {utilisateur_concerne.last_name or ''}".strip()
+            if not nom_complet_citoyen:
+                nom_complet_citoyen = utilisateur_concerne.username
+            
+            montant_formate = f"{int(paiement.montant)} GNF" # Assure un formatage simple
+            reference_demande_formatee = f"CNID-{demande.id}"
+            date_paiement_formatee = paiement.date_paiement.strftime('%d-%m-%Y %H:%M')
+
+            # 2. Envoyer l'e-mail de confirmation et créer la notification interne
+            sujet_email = f"Confirmation de réception de paiement - Demande {reference_demande_formatee}"
+            # Le message_email sera utilisé à la fois pour l'email et pour le contenu de la notification interne
+            message_email_et_notification = f"""Bonjour {nom_complet_citoyen},
+
+Nous vous confirmons la réception de votre paiement de {montant_formate} relatif à votre demande de carte nationale d'identité.
+
+Votre demande est en cours de traitement. Vous recevrez une notification dès qu’un rendez-vous pour la prise d’empreintes sera disponible.
+
+Référence de la demande : {reference_demande_formatee}
+Date de paiement : {date_paiement_formatee}
+
+Merci d'avoir utilisé notre plateforme.
+
+— Direction Générale de la CNID
+"""
+
+            # 1. Créer la notification interne avec le contenu complet
+            try:
+                Notification.objects.create(
+                    citoyen=demande.citoyen,
+                    demande=demande,
+                    contenu=message_email_et_notification, # Contenu complet pour le modal
+                    statut='en_attente' 
+                )
+            except Exception as e:
+                logger.error(f"Erreur lors de la création de la notification pour la demande {demande.id}: {e}")
+
+            # Préparer le message pour l'email (identique ici, mais pourrait différer si besoin)
+            message_email = message_email_et_notification
+            if utilisateur_concerne.email:
+                try:
+                    send_mail(
+                        sujet_email,
+                        message_email,
+                        settings.DEFAULT_FROM_EMAIL,
+                        [utilisateur_concerne.email],
+                        fail_silently=False,
+                    )
+                except Exception as e:
+                    logger.error(f"Erreur lors de l'envoi de l'email de confirmation de paiement pour {utilisateur_concerne.email}: {e}")
+                    Notification.objects.create(
+                        citoyen=demande.citoyen,
+                        demande=demande,
+                        contenu=f"Échec de l'envoi de l'email de confirmation de paiement pour la demande ID {demande.id}. Veuillez vérifier votre adresse email ou contacter le support.",
+                        statut='echoue'
+                    )
+            else:
+                logger.warning(f"L'utilisateur {utilisateur_concerne.username} (demande {demande.id}) n'a pas d'adresse e-mail configurée pour la confirmation de paiement.")
+                Notification.objects.create(
+                    citoyen=demande.citoyen,
+                    demande=demande,
+                    contenu=f"Impossible d'envoyer l'email de confirmation de paiement pour la demande ID {demande.id}: adresse email non fournie.",
+                    statut='echoue'
+                )
+            # --- Fin de l'ajout pour notification et email ---
+
             return Response(
-                PaiementSerializer(paiement).data,
+                PaiementSerializer(paiement).data, 
                 status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

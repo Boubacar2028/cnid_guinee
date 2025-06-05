@@ -28,14 +28,14 @@ const PaiementOptions = ({ demandeId, onClose, onPaymentComplete }) => {
     }
 
     // Mapper les valeurs de méthode pour le backend si nécessaire
-    const methodeBackend = methode === 'orange' ? 'orange_money' : (methode === 'mtn' ? 'mobile_money' : '');
+    const methodeBackend = methode === 'orange_money' ? 'orange_money' : (methode === 'mobile_money' ? 'mobile_money' : '');
     if (!methodeBackend) {
         setPaymentError('Méthode de paiement invalide.');
         setLoading(false);
         return;
     }
 
-    fetch(`${API_URL}/api/paiements/initier/`, {
+    fetch(`${API_URL}/api/initier-paiement/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -80,7 +80,7 @@ const PaiementOptions = ({ demandeId, onClose, onPaymentComplete }) => {
             <h2 className="text-2xl font-bold mt-4 mb-2">Paiement Initié !</h2>
             <p className="text-gray-600 mb-6">
               Votre demande de paiement a été envoyée.
-              Veuillez valider la transaction sur votre téléphone mobile ({numero}) via {methode === 'orange' ? 'Orange Money' : 'Mobile Money'}.
+              Veuillez valider la transaction sur votre téléphone mobile ({numero}) via {methode === 'orange_money' ? 'Orange Money' : 'Mobile Money'}.
             </p>
             <p className="text-sm text-gray-500 mb-6">
               Une fois le paiement confirmé, votre demande sera finalisée.
@@ -122,29 +122,31 @@ const PaiementOptions = ({ demandeId, onClose, onPaymentComplete }) => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div
                       className={`p-3 border rounded-lg cursor-pointer flex items-center ${
-                        methode === 'orange' ? 'border-orange-500 bg-orange-50' : 'border-gray-200'
+                        methode === 'orange_money' ? 'border-orange-500 bg-orange-50' : 'border-gray-200'
                       }`}
-                      onClick={() => setMethode('orange')}
+                      onClick={() => setMethode('orange_money')}
                     >
-                      <div className="flex-shrink-0 h-10 w-10 bg-orange-500 rounded-full flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">OM</span>
-                      </div>
-                      <div className="ml-3">
-                        <p className="font-medium text-gray-900">Orange Money</p>
+                      <div className="ml-4 flex items-center">
+                        <img src="/orange_money.png" alt="Orange Money" className="h-8 w-auto mr-2" />
+                        <div>
+                          <h3 className="text-lg font-semibold">Orange Money</h3>
+                          <p className="text-xs text-gray-500">Paiement via Orange Money</p>
+                        </div>
                       </div>
                     </div>
                     
                     <div
                       className={`p-3 border rounded-lg cursor-pointer flex items-center ${
-                        methode === 'mtn' ? 'border-yellow-500 bg-yellow-50' : 'border-gray-200'
+                        methode === 'mobile_money' ? 'border-yellow-500 bg-yellow-50' : 'border-gray-200'
                       }`}
-                      onClick={() => setMethode('mtn')}
+                      onClick={() => setMethode('mobile_money')}
                     >
-                      <div className="flex-shrink-0 h-10 w-10 bg-yellow-500 rounded-full flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">MM</span>
-                      </div>
-                      <div className="ml-3">
-                        <p className="font-medium text-gray-900">Mobile Money</p>
+                      <div className="ml-4 flex items-center">
+                        <img src="/mtn_momo.jpg" alt="MTN Mobile Money" className="h-8 w-auto mr-2" />
+                        <div>
+                          <h3 className="text-lg font-semibold">Mobile Money (MTN)</h3>
+                          <p className="text-xs text-gray-500">Paiement via MTN</p>
+                        </div>
                       </div>
                     </div>
                   </div>
