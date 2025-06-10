@@ -9,26 +9,28 @@ const AdminPortal = () => {
   const [userData, setUserData] = useState(null);
 
   React.useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
+        const storedUserData = localStorage.getItem('userData');
+    if (storedUserData) {
       try {
-        setUserData(JSON.parse(storedUser));
+        setUserData(JSON.parse(storedUserData));
       } catch (error) {
         console.error('Erreur lors du parsing des données utilisateur:', error);
-        localStorage.removeItem('user'); // Supprimer les données corrompues
+        localStorage.removeItem('userData'); // Supprimer les données corrompues
       }
     }
   }, []);
   const navigate = useNavigate();
   const [activeMenu, setActiveMenu] = useState('dashboard');
 
-  const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user'); // Assurer la suppression des infos utilisateur
-    localStorage.removeItem('user_type'); // Supprimer le type d'utilisateur
-    // Optionnel: afficher un message de déconnexion réussie
-    navigate('/portail-administrateur/login');
+    const handleLogout = () => {
+    // Vider complètement le localStorage pour une déconnexion sécurisée
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user_type');
+    localStorage.removeItem('userData');
+    
+    // Rediriger vers la page de connexion de l'administrateur
+    navigate('/connexion-admin');
   };
 
   // Fonction pour rendre le contenu en fonction du menu actif

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
+
 // Icônes (vous pouvez utiliser react-icons ou des SVGs inline)
 const FilterIcon = () => <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20"><path d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L10 14.414V19a1 1 0 01-1.447.894L7 18.118V14.414L3.293 6.707A1 1 0 013 6V3z"></path></svg>;
 const SearchIcon = () => <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"></path></svg>;
@@ -78,6 +79,7 @@ const StatusBadge = ({ statut }) => {
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 const Historique = () => {
+
   const [searchTerm, setSearchTerm] = useState('');
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
   const [activeTab, setActiveTab] = useState('citoyens');
@@ -95,7 +97,7 @@ const Historique = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const token = localStorage.getItem('accessToken');
+        const token = localStorage.getItem('access_token');
 
     let endpoint = '';
     switch (activeTab) {
@@ -163,6 +165,8 @@ const Historique = () => {
     // Les autres filtres (searchTerm, dateRange, statusFilter) sont conservés lors du changement d'onglet
     // fetchData sera appelé par l'useEffect [fetchData] car activeTab change
   }, [activeTab]);
+
+
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -312,7 +316,7 @@ const Historique = () => {
                         {col.header}
                       </th>
                     ))}
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -323,9 +327,7 @@ const Historique = () => {
                           {col.cell ? col.cell(item) : (typeof item[col.key] === 'boolean' ? (item[col.key] ? 'Oui' : 'Non') : String(item[col.key] === null || item[col.key] === undefined ? '' : item[col.key]))}
                         </td>
                       ))}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button onClick={() => console.log('Détails pour item ID:', item.id, 'dans onglet:', activeTab)} className="text-blue-600 hover:text-blue-800">Détails</button>
-                      </td>
+                      
                     </tr>
                   ))}
                 </tbody>

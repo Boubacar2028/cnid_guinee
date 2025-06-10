@@ -4,7 +4,9 @@ import Header from './components/Pages/Constantes/Header';
 import Footer from './components/Pages/Constantes/Footer';
 import AccueilRoutes from './components/Pages/Accueil/AccueilRoutes';
 import AgentRoutes from './components/Pages/Agent/AgentRoutes';
-import AdminRoutes from './components/Pages/Administrateur/AdminRoutes';
+import AdminPortal from './components/Pages/Administrateur/AdminPortal';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import AdminLogin from './components/auth/AdminLogin';
 import AuthPage from './components/auth/AuthPage';
 
 // Import des composants du portail citoyen
@@ -46,7 +48,12 @@ const AppContent = () => {
           
           {/* Routes pour les autres portails */}
           <Route path="/portail-agents/*" element={<AgentRoutes />} />
-          <Route path="/portail-administrateur/*" element={<AdminRoutes />} />
+          <Route path="/connexion-admin" element={<AdminLogin />} />
+
+          {/* Route protégée pour le portail administrateur */}
+          <Route element={<ProtectedRoute />}>
+                        <Route path="/portail-administrateur/*" element={<AdminPortal />} />
+          </Route>
           <Route path="/dashboard" element={<Navigate to="/portail-agents" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

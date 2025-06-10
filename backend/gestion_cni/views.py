@@ -20,7 +20,8 @@ from .serializers import (
     CitoyenSerializer, AgentSerializer, AdministrateurSerializer,
     ExtraitNaissanceSerializer, DemandeSerializer, CustomTokenObtainPairSerializer,
     PaiementSerializer, NotificationSerializer, # Ajout de PaiementSerializer et NotificationSerializer
-    HistoriqueCitoyenSerializer, HistoriqueAgentSerializer, HistoriquePaiementSerializer, HistoriqueDemandeSerializer # Serializers pour l'historique
+    HistoriqueCitoyenSerializer, HistoriqueAgentSerializer, HistoriquePaiementSerializer, HistoriqueDemandeSerializer, # Serializers pour l'historique
+ # Serializer pour les détails du citoyen
 )
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView, UpdateAPIView, RetrieveAPIView

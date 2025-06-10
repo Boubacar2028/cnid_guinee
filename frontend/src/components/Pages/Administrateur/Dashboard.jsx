@@ -93,7 +93,7 @@ const Dashboard = () => {
       try {
         setLoading(true);
         setError(null); // Réinitialiser l'erreur précédente
-        const token = localStorage.getItem('accessToken');
+                const token = localStorage.getItem('access_token');
         if (!token) {
           setError('Token non trouvé. Veuillez vous reconnecter.');
           // navigate('/portail-administrateur/login');

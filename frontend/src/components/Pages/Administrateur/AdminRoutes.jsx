@@ -22,6 +22,7 @@ const AdminRoutes = () => {
       <Route element={<AdminProtectedRoute />}>
         {/* Toutes les routes admin protégées viennent ici */}
         <Route path="dashboard" element={<AdminPortal />} /> 
+
         {/* Exemple: <Route path="users" element={<AdminUserManagement />} /> */}
         {/* Redirection par défaut pour /admin vers /admin/dashboard si connecté */}
         <Route index element={<Navigate to="dashboard" replace />} /> 

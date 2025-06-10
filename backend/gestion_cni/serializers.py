@@ -334,6 +334,8 @@ class HistoriqueAgentSerializer(serializers.ModelSerializer):
 
 class HistoriquePaiementSerializer(serializers.ModelSerializer):
     citoyen = serializers.SerializerMethodField()
+    # Remplacement par une méthode explicite pour plus de robustesse
+    citoyen_id = serializers.SerializerMethodField()
     montant = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     date_paiement = serializers.DateTimeField(read_only=True, format="%d-%m-%Y %H:%M")
     type_demande = serializers.CharField(source='demande.get_type_demande_display', read_only=True)
@@ -341,27 +343,46 @@ class HistoriquePaiementSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Paiement
-        fields = ['id', 'citoyen', 'montant', 'date_paiement', 'type_demande', 'statut', 'transaction_id']
+        fields = ['id', 'citoyen', 'citoyen_id', 'montant', 'date_paiement', 'type_demande', 'statut', 'transaction_id']
 
     def get_citoyen(self, obj):
         if obj.demande and obj.demande.citoyen and obj.demande.citoyen.utilisateur:
             return obj.demande.citoyen.utilisateur.get_full_name()
         return "N/A"
 
+    def get_citoyen_id(self, obj):
+        # Méthode explicite pour récupérer l'ID du citoyen.
+        # Retourne l'ID si le chemin d'accès complet existe, sinon None.
+        if obj.demande and obj.demande.citoyen:
+            return obj.demande.citoyen.pk
+        return None
+
+
+
+
 class HistoriqueDemandeSerializer(serializers.ModelSerializer):
     demandeur = serializers.SerializerMethodField()
+    # Remplacement par une méthode explicite pour plus de robustesse
+    citoyen_id = serializers.SerializerMethodField()
     type_demande = serializers.CharField(source='get_type_demande_display', read_only=True)
     date_soumission = serializers.DateTimeField(read_only=True, format="%d-%m-%Y %H:%M")
     date_traitement = serializers.DateTimeField(source='date_traitement_effective', read_only=True, format="%d-%m-%Y %H:%M", allow_null=True)
     statut = serializers.CharField(source='get_statut_display', read_only=True)
-    # id est déjà le pk pour Demande
 
     class Meta:
         model = Demande
-        fields = ['id', 'demandeur', 'type_demande', 'date_soumission', 'date_traitement', 'statut']
+        fields = ['id', 'demandeur', 'citoyen_id', 'type_demande', 'date_soumission', 'date_traitement', 'statut']
 
     def get_demandeur(self, obj):
-        return obj.citoyen.utilisateur.get_full_name() if obj.citoyen and obj.citoyen.utilisateur else "N/A"
+        if obj.citoyen and obj.citoyen.utilisateur:
+            return obj.citoyen.utilisateur.get_full_name()
+        return "N/A"
+
+    def get_citoyen_id(self, obj):
+        # Méthode explicite pour récupérer l'ID du citoyen.
+        if obj.citoyen:
+            return obj.citoyen.pk
+        return None
 
 
 class NotificationSerializer(serializers.ModelSerializer):

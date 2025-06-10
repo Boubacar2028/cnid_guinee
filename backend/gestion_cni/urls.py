@@ -17,6 +17,7 @@ from .views import (
     TelechargerRecuView,
     UserDemandesView,
     DemandeDetailView, # Ajout de DemandeDetailView
+
     # Vues pour l'historique
     HistoriqueCitoyensView,
     HistoriqueAgentsView,
@@ -53,6 +54,8 @@ urlpatterns = [
     path('mes-demandes/', UserDemandesView.as_view(), name='user_demandes_list'),
     path('demandes/<int:pk>/', DemandeDetailView.as_view(), name='demande-detail'),
     
+
+
     # Endpoints pour l'historique de l'administrateur
     path('admin/historique/citoyens/', HistoriqueCitoyensView.as_view(), name='historique_citoyens'),
     path('admin/historique/agents/', HistoriqueAgentsView.as_view(), name='historique_agents'),
