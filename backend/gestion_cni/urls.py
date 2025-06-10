@@ -8,6 +8,7 @@ from .views import (
     AdministrateurViewSet,
     ExtraitNaissanceViewSet,
     DemandeViewSet,
+    PaiementViewSet,
     get_statistics,
     admin_dashboard,
     InitierPaiementView, 
@@ -15,7 +16,12 @@ from .views import (
     MarkNotificationAsReadView,
     TelechargerRecuView,
     UserDemandesView,
-    DemandeDetailView # Ajout de DemandeDetailView
+    DemandeDetailView, # Ajout de DemandeDetailView
+    # Vues pour l'historique
+    HistoriqueCitoyensView,
+    HistoriqueAgentsView,
+    HistoriquePaiementsView,
+    HistoriqueDemandesView
 )
 
 router = DefaultRouter()
@@ -24,6 +30,7 @@ router.register(r'agents', AgentViewSet)
 router.register(r'administrateurs', AdministrateurViewSet)
 router.register(r'extraits', ExtraitNaissanceViewSet)
 router.register(r'demandes', DemandeViewSet)
+router.register(r'paiements', PaiementViewSet, basename='paiement')
 
 urlpatterns = [
     # Endpoints d'authentification
@@ -46,6 +53,12 @@ urlpatterns = [
     path('mes-demandes/', UserDemandesView.as_view(), name='user_demandes_list'),
     path('demandes/<int:pk>/', DemandeDetailView.as_view(), name='demande-detail'),
     
+    # Endpoints pour l'historique de l'administrateur
+    path('admin/historique/citoyens/', HistoriqueCitoyensView.as_view(), name='historique_citoyens'),
+    path('admin/historique/agents/', HistoriqueAgentsView.as_view(), name='historique_agents'),
+    path('admin/historique/paiements/', HistoriquePaiementsView.as_view(), name='historique_paiements'),
+    path('admin/historique/demandes/', HistoriqueDemandesView.as_view(), name='historique_demandes'),
+
     # Endpoints API
     path('', include(router.urls)),
 ]

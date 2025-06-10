@@ -217,10 +217,32 @@ class DemandeSerializer(serializers.ModelSerializer):
         return obj.date_traitement if obj.date_traitement else obj.date_soumission
 
 class PaiementSerializer(serializers.ModelSerializer):
+    libelle_methode = serializers.CharField(source='get_methode_display', read_only=True)
+    libelle_statut = serializers.CharField(source='get_statut_display', read_only=True)
+    date_paiement_formatee = serializers.DateTimeField(source='date_paiement', format="%d/%m/%Y %H:%M", read_only=True)
+    # Pour afficher des infos sur la demande liée, comme son type
+    type_demande_associee = serializers.CharField(source='demande.get_type_demande_display', read_only=True, allow_null=True)
+    demande_id = serializers.PrimaryKeyRelatedField(source='demande.id', read_only=True)
     class Meta:
         model = Paiement
-        fields = ['id', 'demande', 'montant', 'date_paiement', 'methode', 'transaction_id', 'statut', 'numero_telephone_paiement']
-        read_only_fields = ['id', 'date_paiement', 'transaction_id', 'statut']
+        fields = [
+            'id', 
+            'demande_id', # ID de la demande
+            'type_demande_associee', # Libellé du type de la demande associée
+            'montant', 
+            'date_paiement', # Date brute si besoin pour tri/calcul
+            'date_paiement_formatee', # Date formatée pour affichage
+            'methode', # Valeur brute
+            'libelle_methode', # Libellé de la méthode
+            'transaction_id', 
+            'statut', # Valeur brute
+            'libelle_statut', # Libellé du statut
+            'numero_telephone_paiement'
+        ]
+        read_only_fields = [
+            'id', 'demande_id', 'type_demande_associee', 'date_paiement', 'date_paiement_formatee', 
+            'libelle_methode', 'transaction_id', 'statut', 'libelle_statut'
+        ]
 
     def create(self, validated_data):
         # Le montant pourrait être défini ici en fonction de la demande ou d'une configuration
@@ -269,6 +291,77 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         except Exception as e:
             logger.error(f"Erreur d'authentification: {str(e)}")
             raise
+
+
+
+# Serializers pour la page Historique Admin
+
+class HistoriqueCitoyenSerializer(serializers.ModelSerializer):
+    nom_complet = serializers.SerializerMethodField()
+    email = serializers.CharField(source='utilisateur.email', read_only=True)
+    telephone = serializers.CharField(source='utilisateur.telephone', read_only=True)
+    date_inscription = serializers.DateTimeField(source='utilisateur.date_joined', read_only=True, format="%d-%m-%Y %H:%M")
+    statut = serializers.SerializerMethodField() # Sera 'Actif' ou 'Inactif'
+    id = serializers.IntegerField(source='pk', read_only=True) # pk est l'ID du Citoyen
+
+    class Meta:
+        model = Citoyen
+        fields = ['id', 'nom_complet', 'email', 'telephone', 'date_inscription', 'statut', 'nin']
+
+    def get_nom_complet(self, obj):
+        return obj.utilisateur.get_full_name() if obj.utilisateur else ""
+
+    def get_statut(self, obj):
+        return "Actif" if obj.utilisateur and obj.utilisateur.is_active else "Inactif"
+
+class HistoriqueAgentSerializer(serializers.ModelSerializer):
+    nom_complet = serializers.SerializerMethodField()
+    email = serializers.CharField(source='utilisateur.email', read_only=True)
+    role = serializers.CharField(source='get_grade_display', read_only=True)
+    date_affectation = serializers.DateTimeField(source='utilisateur.date_joined', read_only=True, format="%d-%m-%Y %H:%M")
+    statut = serializers.SerializerMethodField()
+    id = serializers.IntegerField(source='pk', read_only=True) # pk est l'ID de l'Agent
+
+    class Meta:
+        model = Agent
+        fields = ['id', 'nom_complet', 'email', 'role', 'date_affectation', 'statut', 'matricule']
+
+    def get_nom_complet(self, obj):
+        return obj.utilisateur.get_full_name() if obj.utilisateur else ""
+
+    def get_statut(self, obj):
+        return "Actif" if obj.utilisateur and obj.utilisateur.is_active else "Inactif"
+
+class HistoriquePaiementSerializer(serializers.ModelSerializer):
+    citoyen = serializers.SerializerMethodField()
+    montant = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    date_paiement = serializers.DateTimeField(read_only=True, format="%d-%m-%Y %H:%M")
+    type_demande = serializers.CharField(source='demande.get_type_demande_display', read_only=True)
+    statut = serializers.CharField(source='get_statut_display', read_only=True)
+
+    class Meta:
+        model = Paiement
+        fields = ['id', 'citoyen', 'montant', 'date_paiement', 'type_demande', 'statut', 'transaction_id']
+
+    def get_citoyen(self, obj):
+        if obj.demande and obj.demande.citoyen and obj.demande.citoyen.utilisateur:
+            return obj.demande.citoyen.utilisateur.get_full_name()
+        return "N/A"
+
+class HistoriqueDemandeSerializer(serializers.ModelSerializer):
+    demandeur = serializers.SerializerMethodField()
+    type_demande = serializers.CharField(source='get_type_demande_display', read_only=True)
+    date_soumission = serializers.DateTimeField(read_only=True, format="%d-%m-%Y %H:%M")
+    date_traitement = serializers.DateTimeField(source='date_traitement_effective', read_only=True, format="%d-%m-%Y %H:%M", allow_null=True)
+    statut = serializers.CharField(source='get_statut_display', read_only=True)
+    # id est déjà le pk pour Demande
+
+    class Meta:
+        model = Demande
+        fields = ['id', 'demandeur', 'type_demande', 'date_soumission', 'date_traitement', 'statut']
+
+    def get_demandeur(self, obj):
+        return obj.citoyen.utilisateur.get_full_name() if obj.citoyen and obj.citoyen.utilisateur else "N/A"
 
 
 class NotificationSerializer(serializers.ModelSerializer):

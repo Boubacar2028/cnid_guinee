@@ -26,21 +26,32 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
     
     try {
       const response = await axios.post('http://localhost:8000/api/auth/token/', credentials);
-      localStorage.setItem('access_token', response.data.access);
-      localStorage.setItem('refresh_token', response.data.refresh);
-      localStorage.setItem('user_type', response.data.type_utilisateur);
+      console.log('Réponse du serveur après connexion:', response.data);
+
+      localStorage.setItem('accessToken', response.data.access);
+      localStorage.setItem('refreshToken', response.data.refresh);
+      localStorage.setItem('userType', response.data.type_utilisateur);
       
       // Redirection en fonction du type d'utilisateur
+      console.log(`Tentative de redirection pour l'utilisateur de type: ${response.data.type_utilisateur}`);
       if (response.data.type_utilisateur === 'citoyen') {
+        console.log('Redirection vers /portail-citoyens');
         navigate('/portail-citoyens');
       } else if (response.data.type_utilisateur === 'agent') {
+        console.log('Redirection vers /portail-agents');
         navigate('/portail-agents');
       } else if (response.data.type_utilisateur === 'administrateur') {
+        console.log('Redirection vers /portail-administrateur');
         navigate('/portail-administrateur');
+      } else {
+        console.error('Type d\'utilisateur non reconnu, aucune redirection.');
       }
+      console.log('Réponse du serveur:', response.data);
+      console.log('Type d\'utilisateur:', response.data.type_utilisateur);
+      console.log('Destination de redirection:', response.data.type_utilisateur === 'citoyen' ? '/portail-citoyens' : response.data.type_utilisateur === 'agent' ? '/portail-agents' : '/portail-administrateur');
     } catch (err) {
-      setError('Identifiants invalides');
-    } finally {
+      console.error('Erreur lors de la connexion:', err.response ? err.response.data : err.message);
+      setError('Identifiants invalides ou problème de serveur.');
       setLoading(false);
     }
   };

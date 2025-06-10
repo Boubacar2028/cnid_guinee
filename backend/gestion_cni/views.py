@@ -1,10 +1,12 @@
 from rest_framework import viewsets, permissions, status, generics
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from .permissions import IsAdmin
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.renderers import JSONRenderer
 from django.shortcuts import get_object_or_404
-from django.db.models import Count
+from django.db.models import Count, Q
 import uuid # Pour générer des ID de transaction uniques
 from .models import Citoyen, Agent, Administrateur, ExtraitNaissance, Demande, Notification, Paiement
 from django.http import HttpResponse
@@ -17,7 +19,8 @@ from .models import Demande # Ajout de l'import Demande
 from .serializers import (
     CitoyenSerializer, AgentSerializer, AdministrateurSerializer,
     ExtraitNaissanceSerializer, DemandeSerializer, CustomTokenObtainPairSerializer,
-    PaiementSerializer, NotificationSerializer # Ajout de PaiementSerializer et NotificationSerializer
+    PaiementSerializer, NotificationSerializer, # Ajout de PaiementSerializer et NotificationSerializer
+    HistoriqueCitoyenSerializer, HistoriqueAgentSerializer, HistoriquePaiementSerializer, HistoriqueDemandeSerializer # Serializers pour l'historique
 )
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView, UpdateAPIView, RetrieveAPIView
@@ -25,6 +28,9 @@ from rest_framework.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.conf import settings
 import logging
+from django.utils import timezone
+from datetime import timedelta
+from rest_framework.pagination import PageNumberPagination
 
 logger = logging.getLogger(__name__)
 
@@ -127,7 +133,48 @@ class DemandeViewSet(viewsets.ModelViewSet):
         if self.request.user.type_utilisateur == 'citoyen':
             serializer.save(citoyen=self.request.user.citoyen)
         else:
-            serializer.save()
+            # Pourrait être un agent ou admin créant une demande pour un citoyen spécifique (à gérer si besoin)
+            # Pour l'instant, on assume que seuls les citoyens créent leurs propres demandes via l'API.
+            # Si un citoyen_id est fourni dans les données, on pourrait l'utiliser ici.
+            # raise PermissionDenied("Seuls les citoyens peuvent créer des demandes via cette interface.")
+            # Ou, si on permet aux admins/agents de créer pour d'autres :
+            # citoyen_id = self.request.data.get('citoyen_id')
+            # if citoyen_id:
+            #     citoyen_obj = get_object_or_404(Citoyen, id=citoyen_id)
+            #     serializer.save(citoyen=citoyen_obj)
+            # else:
+            #     raise serializers.ValidationError("citoyen_id est requis pour les agents/admins.")
+            serializer.save() # Comportement actuel, peut nécessiter citoyen_id dans la requête
+
+class PaiementViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet pour lister les paiements.
+    Filtre les paiements pour ne retourner que ceux appartenant aux demandes
+    de l'utilisateur (citoyen) authentifié.
+    Les agents et admins peuvent voir tous les paiements (pour l'instant, à affiner si besoin).
+    """
+    serializer_class = PaiementSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if hasattr(user, 'type_utilisateur'): # Vérifier si l'attribut existe
+            if user.type_utilisateur == 'citoyen':
+                if hasattr(user, 'citoyen'): # Vérifier si le citoyen est lié
+                    # Récupère les IDs des demandes du citoyen
+                    demande_ids = Demande.objects.filter(citoyen=user.citoyen).values_list('id', flat=True)
+                    # Filtre les paiements par ces IDs de demande
+                    return Paiement.objects.filter(demande_id__in=demande_ids).order_by('-date_paiement')
+                else:
+                    logger.warning(f"Utilisateur {user.username} de type citoyen n'a pas de profil Citoyen lié.")
+                    return Paiement.objects.none()
+            elif user.type_utilisateur in ['agent', 'admin']:
+                # Les agents et admins peuvent voir tous les paiements
+                # TODO: Affiner les permissions pour les agents si nécessaire (ex: seulement les paiements des demandes qu'ils traitent)
+                return Paiement.objects.all().order_by('-date_paiement')
+        
+        logger.warning(f"Utilisateur {user.username} avec type_utilisateur non géré ou manquant.")
+        return Paiement.objects.none() # Par défaut, ne retourne rien si le type n'est pas géré
 
 @api_view(['GET'])
 @permission_classes([permissions.AllowAny])
@@ -179,6 +226,168 @@ def get_statistics(request):
 
 # Frais de la CNI (devrait idéalement provenir d'une configuration)
 FRAIS_CNI = 50000  # Montant en GNF
+
+
+# Vues pour la page Historique de l'administrateur
+
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 10 
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+class BaseHistoriqueListView(generics.ListAPIView):
+    permission_classes = [IsAdmin]
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        # Cette méthode est principalement pour la structure.
+        # La logique de filtrage spécifique est dans chaque vue fille.
+        return super().get_queryset()
+
+class HistoriqueCitoyensView(BaseHistoriqueListView):
+    serializer_class = HistoriqueCitoyenSerializer
+    queryset = Citoyen.objects.select_related('utilisateur').all() # Queryset de base
+
+    def get_queryset(self):
+        queryset = Citoyen.objects.select_related('utilisateur').all() # On repart du queryset de base à chaque appel
+        search_term = self.request.query_params.get('search', None)
+        date_debut_str = self.request.query_params.get('date_debut', None)
+        date_fin_str = self.request.query_params.get('date_fin', None)
+        statut_filter = self.request.query_params.get('statut', None)
+
+        if search_term:
+            queryset = queryset.filter(
+                Q(utilisateur__first_name__icontains=search_term) |
+                Q(utilisateur__last_name__icontains=search_term) |
+                Q(utilisateur__email__icontains=search_term) |
+                Q(nin__icontains=search_term) |
+                Q(utilisateur__telephone__icontains=search_term)
+            )
+        
+        if date_debut_str:
+            queryset = queryset.filter(utilisateur__date_joined__date__gte=date_debut_str)
+        if date_fin_str:
+            from datetime import datetime, timedelta
+            date_fin_obj = datetime.strptime(date_fin_str, '%Y-%m-%d').date() + timedelta(days=1)
+            queryset = queryset.filter(utilisateur__date_joined__date__lt=date_fin_obj)
+
+        if statut_filter and statut_filter.lower() != 'tous':
+            is_active_filter = statut_filter.lower() == 'actif'
+            queryset = queryset.filter(utilisateur__is_active=is_active_filter)
+            
+        return queryset.order_by('-utilisateur__date_joined')
+
+
+class HistoriqueAgentsView(BaseHistoriqueListView):
+    serializer_class = HistoriqueAgentSerializer
+    queryset = Agent.objects.select_related('utilisateur').all()
+
+    def get_queryset(self):
+        queryset = Agent.objects.select_related('utilisateur').all()
+        search_term = self.request.query_params.get('search', None)
+        date_debut_str = self.request.query_params.get('date_debut', None)
+        date_fin_str = self.request.query_params.get('date_fin', None)
+        statut_filter = self.request.query_params.get('statut', None)
+
+        if search_term:
+            queryset = queryset.filter(
+                Q(utilisateur__first_name__icontains=search_term) |
+                Q(utilisateur__last_name__icontains=search_term) |
+                Q(utilisateur__email__icontains=search_term) |
+                Q(matricule__icontains=search_term)
+            )
+
+        if date_debut_str:
+            queryset = queryset.filter(utilisateur__date_joined__date__gte=date_debut_str)
+        if date_fin_str:
+            from datetime import datetime, timedelta
+            date_fin_obj = datetime.strptime(date_fin_str, '%Y-%m-%d').date() + timedelta(days=1)
+            queryset = queryset.filter(utilisateur__date_joined__date__lt=date_fin_obj)
+
+        if statut_filter and statut_filter.lower() != 'tous':
+            is_active_filter = statut_filter.lower() == 'actif'
+            queryset = queryset.filter(utilisateur__is_active=is_active_filter)
+            
+        return queryset.order_by('-utilisateur__date_joined')
+
+
+class HistoriquePaiementsView(BaseHistoriqueListView):
+    serializer_class = HistoriquePaiementSerializer
+    queryset = Paiement.objects.select_related('demande__citoyen', 'demande').all()
+
+    def get_queryset(self):
+        queryset = Paiement.objects.select_related('demande__citoyen', 'demande').all()
+        search_term = self.request.query_params.get('search', None)
+        date_debut_str = self.request.query_params.get('date_debut', None)
+        date_fin_str = self.request.query_params.get('date_fin', None)
+        statut_filter = self.request.query_params.get('statut', None)
+
+        if search_term:
+            queryset = queryset.filter(
+                Q(citoyen__utilisateur__first_name__icontains=search_term) |
+                Q(citoyen__utilisateur__last_name__icontains=search_term) |
+                Q(citoyen__utilisateur__email__icontains=search_term) |
+                Q(transaction_id__icontains=search_term) |
+                Q(demande__id__icontains=search_term)
+            )
+        
+        if date_debut_str:
+            queryset = queryset.filter(date_paiement__date__gte=date_debut_str)
+        if date_fin_str:
+            from datetime import datetime, timedelta
+            date_fin_obj = datetime.strptime(date_fin_str, '%Y-%m-%d').date() + timedelta(days=1)
+            queryset = queryset.filter(date_paiement__date__lt=date_fin_obj)
+
+        if statut_filter and statut_filter.lower() != 'tous':
+            statut_mapping = {
+                'en attente': 'en_attente',
+                'confirmé': 'complet',      # Correction: Le statut de succès est 'complet'
+                'echoué': 'echoue',
+                'remboursé': 'rembourse',
+            }
+            backend_statut = statut_mapping.get(statut_filter.lower(), statut_filter.lower())
+            queryset = queryset.filter(statut__iexact=backend_statut)
+            
+        return queryset.order_by('-date_paiement')
+
+
+class HistoriqueDemandesView(BaseHistoriqueListView):
+    serializer_class = HistoriqueDemandeSerializer
+    queryset = Demande.objects.select_related('citoyen__utilisateur').all()
+
+    def get_queryset(self):
+        queryset = Demande.objects.select_related('citoyen__utilisateur').all()
+        search_term = self.request.query_params.get('search', None)
+        date_debut_str = self.request.query_params.get('date_debut', None)
+        date_fin_str = self.request.query_params.get('date_fin', None)
+        statut_filter = self.request.query_params.get('statut', None)
+
+        if search_term:
+            queryset = queryset.filter(
+                Q(citoyen__utilisateur__first_name__icontains=search_term) |
+                Q(citoyen__utilisateur__last_name__icontains=search_term) |
+                Q(citoyen__utilisateur__email__icontains=search_term) |
+                Q(id__icontains=search_term)
+            )
+
+        if date_debut_str:
+            queryset = queryset.filter(date_soumission__date__gte=date_debut_str)
+        if date_fin_str:
+            from datetime import datetime, timedelta
+            date_fin_obj = datetime.strptime(date_fin_str, '%Y-%m-%d').date() + timedelta(days=1)
+            queryset = queryset.filter(date_soumission__date__lt=date_fin_obj)
+
+        if statut_filter and statut_filter.lower() != 'tous':
+            statut_mapping = {
+                'en cours de traitement': 'en_cours',
+                'validée': 'validee',
+                'approuvée': 'validee',  # 'approuvée' est un synonyme pour 'validée'
+                'rejetée': 'rejetee',
+            }
+            backend_statut = statut_mapping.get(statut_filter.lower(), statut_filter.lower())
+            queryset = queryset.filter(statut__iexact=backend_statut)
+            
+        return queryset.order_by('-date_soumission')
 
 
 class UserNotificationsView(ListAPIView):
@@ -500,16 +709,52 @@ def admin_dashboard(request):
     
     # Calculer les statistiques
     total_requests = Demande.objects.count()
-    pending_requests = Demande.objects.filter(statut='en_attente').count()
-    approved_requests = Demande.objects.filter(statut='approuve').count()
-    rejected_requests = Demande.objects.filter(statut='rejete').count()
+    pending_requests = Demande.objects.filter(statut='en_cours').count()
+    approved_requests = Demande.objects.filter(statut='validee').count()
+    rejected_requests = Demande.objects.filter(statut='rejetee').count()
     active_employees = Agent.objects.count() + Administrateur.objects.count()
     
-    # Générer des données fictives pour la performance hebdomadaire (à remplacer par de vraies données)
-    # Format: lundi à dimanche
-    weekly_approved = [5, 7, 4, 8, 10, 3, 2]
-    weekly_pending = [3, 2, 6, 4, 2, 1, 0]
+    # Calculer la performance hebdomadaire réelle
+    today = timezone.now().date()
+    # weekday(): Lundi=0, Mardi=1, ..., Dimanche=6
+    start_of_week = today - timedelta(days=today.weekday())
     
+    weekly_approved_counts = [0] * 7
+    weekly_pending_counts = [0] * 7
+    
+    for i in range(7):
+        current_day = start_of_week + timedelta(days=i)
+        
+        approved_count_for_day = Demande.objects.filter(
+            date_soumission__date=current_day,
+            statut='validee'
+        ).count()
+        weekly_approved_counts[i] = approved_count_for_day
+        
+        pending_count_for_day = Demande.objects.filter(
+            date_soumission__date=current_day,
+            statut='en_cours'
+        ).count()
+        weekly_pending_counts[i] = pending_count_for_day
+        
+    weekly_approved = weekly_approved_counts
+    weekly_pending = weekly_pending_counts
+    
+    # Calcul du rapport mensuel pour les demandes traitées de l'année en cours
+    current_year = timezone.now().year
+    monthly_processed_counts = [0] * 12 # Index 0 pour Janvier, ..., 11 pour Décembre
+
+    for month_idx in range(12):
+        month = month_idx + 1 # Mois de 1 à 12
+        # Assurez-vous que le champ date_traitement existe et est pertinent
+        # Si date_traitement peut être None, il faut le gérer ou s'assurer qu'il est bien setté lors du traitement
+        count = Demande.objects.filter(
+            date_traitement__year=current_year,
+            date_traitement__month=month,
+            statut__in=['validee', 'rejetee']
+        ).count()
+        monthly_processed_counts[month_idx] = count
+
     # Réponse du tableau de bord
     dashboard_data = {
         'totalRequests': total_requests,
@@ -526,7 +771,7 @@ def admin_dashboard(request):
             'pending': weekly_pending
         },
         'monthlyReport': {
-            'processedRequests': approved_requests + rejected_requests,
+            'processedRequests': monthly_processed_counts,
             'averageTime': '3 jours',  # Valeur fixe pour l'instant
             'satisfaction': 95  # Valeur fixe pour l'instant
         },

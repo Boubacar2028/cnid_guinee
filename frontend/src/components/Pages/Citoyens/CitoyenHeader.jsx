@@ -113,11 +113,7 @@ const CitoyenHeader = () => {
           
           {/* User profile and notifications */}
           <div className="flex items-center space-x-3 md:space-x-5">
-            {/* Notification bell */}
-            <button className="relative p-2 text-gray-700 hover:text-yellow-600 transition-colors hover:bg-yellow-50 rounded-full">
-              <Bell size={20} />
-              <span className="absolute top-1 right-1 h-2.5 w-2.5 bg-red-500 rounded-full ring-2 ring-white animate-pulse"></span>
-            </button>
+
             
             {/* User profile */}
             <div className="relative profile-menu-container">
