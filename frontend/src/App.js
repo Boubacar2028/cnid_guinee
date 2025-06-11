@@ -6,7 +6,7 @@ import AccueilRoutes from './components/Pages/Accueil/AccueilRoutes';
 import AgentRoutes from './components/Pages/Agent/AgentRoutes';
 import AdminPortal from './components/Pages/Administrateur/AdminPortal';
 import ProtectedRoute from './components/auth/ProtectedRoute';
-import AdminLogin from './components/auth/AdminLogin';
+import AdminLoginPage from './components/Pages/Administrateur/AdminLoginPage';
 import AuthPage from './components/auth/AuthPage';
 
 // Import des composants du portail citoyen
@@ -22,17 +22,17 @@ import DemandeDetailPage from './components/Pages/Citoyens/DemandeDetailPage'; /
 const AppContent = () => {
   const location = useLocation();
   
-  // Détecter si nous sommes dans une section de portail
-  const isInPortalSection = 
+  // Détecter si nous sommes sur une page qui ne doit pas afficher le header/footer principal
+  const isLayoutHidden = 
     location.pathname.startsWith('/portail-citoyens') ||
     location.pathname.startsWith('/portail-agents') ||
-    location.pathname.startsWith('/portail-administrateur');
-  
-  const isAuthPage = location.pathname === '/auth';
+    location.pathname.startsWith('/portail-administrateur') ||
+    location.pathname === '/auth' ||
+    location.pathname === '/connexion-admin';
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col overflow-x-hidden">
-      {!isInPortalSection && !isAuthPage && <Header />}
+      {!isLayoutHidden && <Header />}
       <Routes>
           <Route path="/" element={<AccueilRoutes />} />
           <Route path="/auth" element={<AuthPage />} />
@@ -48,7 +48,7 @@ const AppContent = () => {
           
           {/* Routes pour les autres portails */}
           <Route path="/portail-agents/*" element={<AgentRoutes />} />
-          <Route path="/connexion-admin" element={<AdminLogin />} />
+          <Route path="/connexion-admin" element={<AdminLoginPage />} />
 
           {/* Route protégée pour le portail administrateur */}
           <Route element={<ProtectedRoute />}>
@@ -57,7 +57,7 @@ const AppContent = () => {
           <Route path="/dashboard" element={<Navigate to="/portail-agents" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      {!isInPortalSection && !isAuthPage && <Footer />}
+      {!isLayoutHidden && <Footer />}
       </div>
   );
 };

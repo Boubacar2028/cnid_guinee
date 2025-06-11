@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
 
 # voici le modèle utilisateur
 
@@ -79,32 +80,37 @@ class Citoyen(models.Model):
 
 # Modèle pour l'agent 
 class Agent(models.Model):
-    GRADE_CHOICES = [
-        ('agent', 'Agent'),
-        ('superviseur', 'Superviseur'),
-        ('chef_service', 'Chef de Service'),
-    ]
-    
     utilisateur = models.OneToOneField(
         Utilisateur,
         on_delete=models.CASCADE,
         primary_key=True,
         related_name='agent'
     )
-    matricule = models.CharField(max_length=20, unique=True)
-    grade = models.CharField(
-        max_length=20,
-        choices=GRADE_CHOICES,
-        default='agent'
-    )
-    
+    matricule = models.CharField(max_length=20, unique=True, blank=True, editable=False)
+
+    def save(self, *args, **kwargs):
+        if not self.matricule:
+            current_year = timezone.now().year
+            prefix = f"AG{current_year}"
+            last_agent = Agent.objects.filter(matricule__startswith=prefix).order_by('-matricule').first()
+            
+            if last_agent:
+                last_seq_str = last_agent.matricule[len(prefix):]
+                next_seq = int(last_seq_str) + 1
+            else:
+                next_seq = 1
+            
+            self.matricule = f"{prefix}{next_seq:02d}"
+        
+        super().save(*args, **kwargs)
+
     class Meta:
         verbose_name = "Agent"
         verbose_name_plural = "Agents"
         ordering = ['matricule']
-        
+
     def __str__(self):
-        return f"{self.utilisateur.get_full_name()} ({self.get_grade_display()})"
+        return f"{self.utilisateur.get_full_name()} (Matricule: {self.matricule})"
 
 # Modèle pour l'administrateur
 class Administrateur(models.Model):
@@ -191,13 +197,13 @@ class Demande(models.Model):
         blank=True,                # Permet au champ d'être vide dans les formulaires Django (admin)
         verbose_name="Extrait de naissance associé"
     )
-    agent_traitant = models.ForeignKey(  # Nouvelle relation
-        'Utilisateur',
+    agent_traitant = models.ForeignKey(
+        'Agent',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        limit_choices_to={'type_utilisateur': 'agent'},
-        verbose_name="Agent en charge"
+        related_name='demandes_traitees',
+        verbose_name="Agent traitant"
     )
     type_demande = models.CharField(  # Nouveau champ
         max_length=20,

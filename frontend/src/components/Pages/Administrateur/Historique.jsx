@@ -28,9 +28,9 @@ const columnConfig = {
     { key: 'statut', header: 'Statut', cell: (item) => <StatusBadge statut={item.statut} /> },
   ],
   agents: [
+    { key: 'matricule', header: 'Matricule' },
     { key: 'nom_complet', header: 'Nom Complet' },
     { key: 'email', header: 'Email' },
-    { key: 'role', header: 'Rôle' },
     { key: 'date_affectation', header: 'Date d\'Affectation' },
     { key: 'statut', header: 'Statut', cell: (item) => <StatusBadge statut={item.statut} /> },
   ],

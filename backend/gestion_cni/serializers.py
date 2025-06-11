@@ -8,8 +8,11 @@ Utilisateur = get_user_model()
 class UtilisateurSerializer(serializers.ModelSerializer):
     class Meta:
         model = Utilisateur
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'type_utilisateur', 'telephone', 'password']
-        read_only_fields = ['type_utilisateur']
+        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'type_utilisateur', 'telephone', 'password', 'date_joined', 'last_login', 'is_active')
+        read_only_fields = ('type_utilisateur', 'date_joined', 'last_login')
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
 
 class CitoyenSerializer(serializers.ModelSerializer):
     utilisateur = UtilisateurSerializer()
@@ -85,11 +88,20 @@ class CitoyenSerializer(serializers.ModelSerializer):
             raise  # Relancer l'exception pour que l'API retourne l'erreur
 
 class AgentSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source='pk', read_only=True)
     utilisateur = UtilisateurSerializer()
+    demandes_traitees_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Agent
-        fields = '__all__'
+        fields = ('id', 'utilisateur', 'matricule', 'demandes_traitees_count')
+
+    def get_demandes_traitees_count(self, obj):
+        # Cette méthode suppose que le modèle Demande a un champ 'agent_traitant'
+        # avec un related_name 'demandes_traitees'.
+        if hasattr(obj, 'demandes_traitees'):
+            return obj.demandes_traitees.count()
+        return 0
 
     def create(self, validated_data):
         utilisateur_data = validated_data.pop('utilisateur')
@@ -111,6 +123,22 @@ class AgentSerializer(serializers.ModelSerializer):
         
         agent = Agent.objects.create(utilisateur=utilisateur, **validated_data)
         return agent
+
+    def update(self, instance, validated_data):
+        utilisateur_data = validated_data.pop('utilisateur', {})
+        utilisateur = instance.utilisateur
+
+        # Mettre à jour les champs de l'utilisateur.
+        utilisateur.first_name = utilisateur_data.get('first_name', utilisateur.first_name)
+        utilisateur.last_name = utilisateur_data.get('last_name', utilisateur.last_name)
+        utilisateur.email = utilisateur_data.get('email', utilisateur.email)
+        utilisateur.username = utilisateur_data.get('email', utilisateur.username) # Assurer la cohérence du username
+        utilisateur.save()
+
+        # Les champs de l'agent (comme le matricule) ne sont pas modifiables ici.
+        instance.save()
+
+        return instance
 
 class AdministrateurSerializer(serializers.ModelSerializer):
     utilisateur = UtilisateurSerializer()
@@ -317,14 +345,14 @@ class HistoriqueCitoyenSerializer(serializers.ModelSerializer):
 class HistoriqueAgentSerializer(serializers.ModelSerializer):
     nom_complet = serializers.SerializerMethodField()
     email = serializers.CharField(source='utilisateur.email', read_only=True)
-    role = serializers.CharField(source='get_grade_display', read_only=True)
+
     date_affectation = serializers.DateTimeField(source='utilisateur.date_joined', read_only=True, format="%d-%m-%Y %H:%M")
     statut = serializers.SerializerMethodField()
     id = serializers.IntegerField(source='pk', read_only=True) # pk est l'ID de l'Agent
 
     class Meta:
         model = Agent
-        fields = ['id', 'nom_complet', 'email', 'role', 'date_affectation', 'statut', 'matricule']
+        fields = ['id', 'matricule', 'nom_complet', 'email', 'date_affectation', 'statut']
 
     def get_nom_complet(self, obj):
         return obj.utilisateur.get_full_name() if obj.utilisateur else ""
