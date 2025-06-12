@@ -166,7 +166,7 @@ const AuthPage = () => {
       };
       
       console.log('Données d\'inscription à envoyer:', userData);
-      const response = await axios.post('http://localhost:8000/api/auth/citoyens/', userData);
+      const response = await axios.post('http://localhost:8000/api/citoyens/', userData);
       
       console.log('Réponse d\'inscription:', response.data);
       

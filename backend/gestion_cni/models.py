@@ -49,7 +49,6 @@ class Citoyen(models.Model):
     utilisateur = models.OneToOneField(
         Utilisateur,
         on_delete=models.CASCADE,
-        primary_key=True,
         related_name='citoyen'
     )
     nin = models.CharField(max_length=20, unique=True, verbose_name="Numéro d'identification national", blank=True, null=True)
@@ -88,7 +87,6 @@ class Agent(models.Model):
     utilisateur = models.OneToOneField(
         Utilisateur,
         on_delete=models.CASCADE,
-        primary_key=True,
         related_name='agent'
     )
     matricule = models.CharField(max_length=20, unique=True, blank=True, editable=False)
@@ -122,7 +120,6 @@ class Administrateur(models.Model):
     utilisateur = models.OneToOneField(
         Utilisateur,
         on_delete=models.CASCADE,
-        primary_key=True,
         related_name='administrateur'
     )
     super_admin = models.BooleanField(

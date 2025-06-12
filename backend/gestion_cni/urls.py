@@ -25,6 +25,7 @@ from .views import (
     HistoriquePaiementsView,
     HistoriqueDemandesView,
     ChangePasswordView,
+    CheckActiveDemandeView,
     AgentDashboardStatsView
 )
 
@@ -50,6 +51,9 @@ urlpatterns = [
 
     # Endpoint pour initier un paiement
     path('initier-paiement/', InitierPaiementView.as_view(), name='initier_paiement'),
+
+    # Endpoint pour vérifier si une demande est active pour un utilisateur
+    path('check-active-demande/', CheckActiveDemandeView.as_view(), name='check_active_demande'),
 
     # Endpoint pour les notifications de l'utilisateur
     path('notifications/', UserNotificationsView.as_view(), name='user_notifications'),

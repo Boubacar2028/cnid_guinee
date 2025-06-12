@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CitoyenHeader from './CitoyenHeader';
-import { ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronRight, Loader2, Info } from 'lucide-react';
 import DemandeEtapes from './DemandeEtapes';
 import PaiementOptions from './PaiementOptions';
 import { API_URL } from '../../constants';
@@ -40,6 +40,10 @@ const NouvelleDemandePage = () => {
   const [submissionError, setSubmissionError] = useState(null);
   const [createdDemandeNumeroSuivi, setCreatedDemandeNumeroSuivi] = useState(null);
   const [createdDemandeId, setCreatedDemandeId] = useState(null); // ID de la demande pour le paiement
+
+  const [hasActiveDemande, setHasActiveDemande] = useState(false);
+  const [isCheckingDemande, setIsCheckingDemande] = useState(true);
+  const [checkingError, setCheckingError] = useState(null);
 
   // État pour les documents uploadés
   const [documents, setDocuments] = useState({
@@ -181,20 +185,41 @@ const NouvelleDemandePage = () => {
       return;
     }
 
-    // Pour l'instant, nous envoyons uniquement le type de demande.
-    // TODO: Étendre pour envoyer toutes les données du formulaire (formData)
-    const demandeData = {
-      type_demande: formData.typeDemande,
+    const submissionData = new FormData();
+
+    // Conversion des clés camelCase en snake_case pour le backend
+    const keyMapping = {
+      typeDemande: 'type_demande',
+      dateNaissance: 'date_naissance',
+      lieuNaissance: 'lieu_naissance',
+      statutNationalite: 'statut_nationalite',
+      situationMatrimoniale: 'situation_matrimoniale',
+      signesParticuliers: 'signes_particuliers',
+      couleurCheveux: 'couleur_cheveux',
+      prenomPere: 'prenom_pere',
+      prenomMere: 'prenom_mere',
+      nomMere: 'nom_mere',
     };
+
+    // Ajout des champs de texte
+    for (const key in formData) {
+      const backendKey = keyMapping[key] || key;
+      submissionData.append(backendKey, formData[key]);
+    }
+
+    // Ajout des fichiers
+    if (documents.extraitNaissance) submissionData.append('extrait_naissance', documents.extraitNaissance);
+    if (documents.certificatResidence) submissionData.append('certificat_residence', documents.certificatResidence);
+    if (documents.photoIdentite) submissionData.append('photo_identite', documents.photoIdentite);
 
     try {
       const response = await fetch(`${API_URL}/api/demandes/`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          // Pas de 'Content-Type', le navigateur le définit automatiquement pour FormData
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(demandeData),
+        body: submissionData,
       });
 
       if (response.status === 201) {
@@ -232,6 +257,41 @@ const NouvelleDemandePage = () => {
     setDemandeComplete(true);
   };
 
+  useEffect(() => {
+    const checkActiveDemande = async () => {
+      setIsCheckingDemande(true);
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        setIsCheckingDemande(false);
+        return;
+      }
+
+      try {
+        // Note: L'endpoint /api/demandes/active/ doit être créé côté backend
+        const response = await fetch(`${API_URL}/api/check-active-demande/`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.status === 200) {
+          const data = await response.json();
+          setHasActiveDemande(data.has_active_demande);
+        } else {
+          // Si aucune demande active n'est trouvée (ex: 404), on considère que c'est bon
+          setHasActiveDemande(false);
+        }
+      } catch (error) {
+        console.error("Erreur lors de la vérification de la demande active:", error);
+        setCheckingError("Impossible de vérifier l'état de votre demande. Veuillez réessayer plus tard.");
+      } finally {
+        setIsCheckingDemande(false);
+      }
+    };
+
+    checkActiveDemande();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <CitoyenHeader />
@@ -239,177 +299,202 @@ const NouvelleDemandePage = () => {
       {/* Espacement supplémentaire pour éviter que le header ne cache le contenu */}
       <div className="h-16"></div>
       
-      {demandeComplete ? (
-        <div className="container mx-auto py-16 px-4">
-          <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
-            <div className="p-8 text-center">
-              <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h1 className="text-2xl font-bold text-gray-800 mb-4">Demande envoyée avec succès !</h1>
-              <p className="text-gray-600 mb-8 max-w-lg mx-auto">
-                Votre demande de carte nationale d'identité a été enregistrée. Vous recevrez bientôt un SMS vous invitant à vous présenter pour la prise des données biométriques.  
-              </p>
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 inline-block">
-                <p className="text-sm text-blue-800 font-medium">Numéro de suivi:</p>
-                <p className="text-lg font-mono font-bold">{createdDemandeNumeroSuivi || 'N/A'}</p>
-              </div>
-            </div>
+      <main className="container mx-auto py-10 px-4">
+        {isCheckingDemande ? (
+          <div className="flex justify-center items-center py-20">
+            <Loader2 size={32} className="animate-spin text-blue-600" />
+            <p className="ml-4 text-gray-600">Vérification de vos demandes en cours...</p>
           </div>
-        </div>
-      ) : (
-        <div className="container mx-auto py-10 px-4">
-          <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
-            <div className="p-8">
-              <h1 className="text-2xl font-bold text-gray-800 mb-6">Nouvelle demande de carte d'identité</h1>
-              
-              {/* Indicateur d'étapes */}
-              <div className="relative mb-8 overflow-x-auto pb-2">
-                <div className="flex space-x-2 md:space-x-4 min-w-max">
-                  <div className={`flex flex-col items-center ${etape >= 1 ? 'text-blue-600' : 'text-gray-400'}`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${etape >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
-                      1
+        ) : checkingError ? (
+          <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md p-8 text-center">
+            <h2 className="text-xl font-bold text-red-600">Erreur</h2>
+            <p className="text-gray-600 mt-2">{checkingError}</p>
+          </div>
+        ) : hasActiveDemande ? (
+          <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md p-8 text-center">
+            <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Info size={32} />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-800 mb-4">Vous avez déjà une demande en cours</h1>
+            <p className="text-gray-600 mb-8 max-w-lg mx-auto">
+              Vous ne pouvez pas soumettre une nouvelle demande tant que la précédente n'a pas été traitée. Veuillez consulter l'historique de vos demandes pour suivre son statut.
+            </p>
+          </div>
+        ) : (
+          <>
+            {demandeComplete ? (
+              <div className="container mx-auto py-16 px-4">
+                <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
+                  <div className="p-8 text-center">
+                    <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
                     </div>
-                    <span className="text-xs font-medium">Type</span>
-                  </div>
-                  
-                  <div className="flex-1 flex items-center">
-                    <div className={`h-0.5 w-full ${etape > 1 ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
-                  </div>
-                  
-                  <div className={`flex flex-col items-center ${etape >= 2 ? 'text-blue-600' : 'text-gray-400'}`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${etape >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
-                      2
+                    <h1 className="text-2xl font-bold text-gray-800 mb-4">Demande envoyée avec succès !</h1>
+                    <p className="text-gray-600 mb-8 max-w-lg mx-auto">
+                      Votre demande de carte nationale d'identité a été enregistrée. Vous recevrez bientôt un SMS vous invitant à vous présenter pour la prise des données biométriques.  
+                    </p>
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 inline-block">
+                      <p className="text-sm text-blue-800 font-medium">Numéro de suivi:</p>
+                      <p className="text-lg font-mono font-bold">{createdDemandeNumeroSuivi || 'N/A'}</p>
                     </div>
-                    <span className="text-xs font-medium">Infos</span>
-                  </div>
-                  
-                  <div className="flex-1 flex items-center">
-                    <div className={`h-0.5 w-full ${etape > 2 ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
-                  </div>
-                  
-                  <div className={`flex flex-col items-center ${etape >= 3 ? 'text-blue-600' : 'text-gray-400'}`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${etape >= 3 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
-                      3
-                    </div>
-                    <span className="text-xs font-medium">Signalement</span>
-                  </div>
-                  
-                  <div className="flex-1 flex items-center">
-                    <div className={`h-0.5 w-full ${etape > 3 ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
-                  </div>
-                  
-                  <div className={`flex flex-col items-center ${etape >= 4 ? 'text-blue-600' : 'text-gray-400'}`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${etape >= 4 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
-                      4
-                    </div>
-                    <span className="text-xs font-medium">Ascendants</span>
-                  </div>
-                  
-                  <div className="flex-1 flex items-center">
-                    <div className={`h-0.5 w-full ${etape > 4 ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
-                  </div>
-                  
-                  <div className={`flex flex-col items-center ${etape >= 5 ? 'text-blue-600' : 'text-gray-400'}`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${etape >= 5 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
-                      5
-                    </div>
-                    <span className="text-xs font-medium">Documents</span>
-                  </div>
-                  
-                  <div className="flex-1 flex items-center">
-                    <div className={`h-0.5 w-full ${etape > 5 ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
-                  </div>
-                  
-                  <div className={`flex flex-col items-center ${etape >= 6 ? 'text-blue-600' : 'text-gray-400'}`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${etape >= 6 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
-                      6
-                    </div>
-                    <span className="text-xs font-medium">Récapitulatif</span>
                   </div>
                 </div>
               </div>
-              
-              <form className="space-y-8" onSubmit={handleSubmit}>
-                <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl mt-8">
-                  <CitoyenHeader />
-                  <DemandeEtapes 
-                    etape={etape}
-                    formData={formData}
-                    handleChange={handleChange}
-                    documents={documents}
-                    handleFileChange={handleFileChange}
-                    validationErrors={validationErrors}
-                    handleNext={handleNext}
-                    handlePrevious={handlePrevious}
-                  />
-                </div>
+            ) : (
+              <div className="container mx-auto py-10 px-4">
+                <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
+                  <div className="p-8">
+                    <h1 className="text-2xl font-bold text-gray-800 mb-6">Nouvelle demande de carte d'identité</h1>
+                    
+                    {/* Indicateur d'étapes */}
+                    <div className="relative mb-8 overflow-x-auto pb-2">
+                      <div className="flex space-x-2 md:space-x-4 min-w-max">
+                        <div className={`flex flex-col items-center ${etape >= 1 ? 'text-blue-600' : 'text-gray-400'}`}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${etape >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                            1
+                          </div>
+                          <span className="text-xs font-medium">Type</span>
+                        </div>
+                        
+                        <div className="flex-1 flex items-center">
+                          <div className={`h-0.5 w-full ${etape > 1 ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
+                        </div>
+                        
+                        <div className={`flex flex-col items-center ${etape >= 2 ? 'text-blue-600' : 'text-gray-400'}`}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${etape >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                            2
+                          </div>
+                          <span className="text-xs font-medium">Infos</span>
+                        </div>
+                        
+                        <div className="flex-1 flex items-center">
+                          <div className={`h-0.5 w-full ${etape > 2 ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
+                        </div>
+                        
+                        <div className={`flex flex-col items-center ${etape >= 3 ? 'text-blue-600' : 'text-gray-400'}`}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${etape >= 3 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                            3
+                          </div>
+                          <span className="text-xs font-medium">Signalement</span>
+                        </div>
+                        
+                        <div className="flex-1 flex items-center">
+                          <div className={`h-0.5 w-full ${etape > 3 ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
+                        </div>
+                        
+                        <div className={`flex flex-col items-center ${etape >= 4 ? 'text-blue-600' : 'text-gray-400'}`}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${etape >= 4 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                            4
+                          </div>
+                          <span className="text-xs font-medium">Ascendants</span>
+                        </div>
+                        
+                        <div className="flex-1 flex items-center">
+                          <div className={`h-0.5 w-full ${etape > 4 ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
+                        </div>
+                        
+                        <div className={`flex flex-col items-center ${etape >= 5 ? 'text-blue-600' : 'text-gray-400'}`}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${etape >= 5 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                            5
+                          </div>
+                          <span className="text-xs font-medium">Documents</span>
+                        </div>
+                        
+                        <div className="flex-1 flex items-center">
+                          <div className={`h-0.5 w-full ${etape > 5 ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
+                        </div>
+                        
+                        <div className={`flex flex-col items-center ${etape >= 6 ? 'text-blue-600' : 'text-gray-400'}`}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${etape >= 6 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                            6
+                          </div>
+                          <span className="text-xs font-medium">Récapitulatif</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <form className="space-y-8" onSubmit={handleSubmit}>
+                      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl mt-8">
+                        <DemandeEtapes 
+                          etape={etape}
+                          formData={formData}
+                          handleChange={handleChange}
+                          documents={documents}
+                          handleFileChange={handleFileChange}
+                          validationErrors={validationErrors}
+                          handleNext={handleNext}
+                          handlePrevious={handlePrevious}
+                        />
+                      </div>
 
-                {submissionError && (
-                  <div className="mt-6 p-4 bg-red-100 text-red-700 border border-red-300 rounded-lg text-sm">
-                    <p className="font-semibold mb-1">Erreur lors de la soumission :</p>
-                    <p>{submissionError}</p>
-                  </div>
-                )}
-                
-                {/* Boutons de navigation */}
-                <div className="flex justify-between pt-4 border-t border-gray-100">
-                  {etape > 1 && (
-                    <button
-                      type="button"
-                      onClick={handlePrevious}
-                      className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                      disabled={isSubmitting}
-                    >
-                      Précédent
-                    </button>
-                  )}
-                  
-                  <div className="ml-auto">
-                    {etape < 6 ? (
-                      <button
-                        type="button"
-                        onClick={() => handleNext(etape)}
-                        className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        disabled={isSubmitting}
-                      >
-                        Suivant
-                        <ChevronRight size={16} className="ml-1" />
-                      </button>
-                    ) : (
-                      <button
-                        type="submit"
-                        className={`px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center justify-center w-full md:w-auto ${isSubmitting ? 'opacity-75 cursor-not-allowed' : ''}`}
-                        disabled={isSubmitting}
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <Loader2 size={20} className="animate-spin mr-2" />
-                            Soumission en cours...
-                          </>
-                        ) : (
-                          'Soumettre la demande'
+                      {submissionError && (
+                        <div className="mt-6 p-4 bg-red-100 text-red-700 border border-red-300 rounded-lg text-sm">
+                          <p className="font-semibold mb-1">Erreur lors de la soumission :</p>
+                          <p>{submissionError}</p>
+                        </div>
+                      )}
+                      
+                      {/* Boutons de navigation */}
+                      <div className="flex justify-between pt-4 border-t border-gray-100">
+                        {etape > 1 && (
+                          <button
+                            type="button"
+                            onClick={handlePrevious}
+                            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                            disabled={isSubmitting}
+                          >
+                            Précédent
+                          </button>
                         )}
-                      </button>
-                    )}
+                        
+                        <div className="ml-auto">
+                          {etape < 6 ? (
+                            <button
+                              type="button"
+                              onClick={() => handleNext(etape)}
+                              className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              disabled={isSubmitting}
+                            >
+                              Suivant
+                              <ChevronRight size={16} className="ml-1" />
+                            </button>
+                          ) : (
+                            <button
+                              type="submit"
+                              className={`px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center justify-center w-full md:w-auto ${isSubmitting ? 'opacity-75 cursor-not-allowed' : ''}`}
+                              disabled={isSubmitting}
+                            >
+                              {isSubmitting ? (
+                                <>
+                                  <Loader2 size={20} className="animate-spin mr-2" />
+                                  Soumission en cours...
+                                </> 
+                              ) : (
+                                'Soumettre la demande'
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </form>
                   </div>
                 </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Composant de paiement */}
-      {showPaiement && createdDemandeId && (
-        <PaiementOptions
-          demandeId={createdDemandeId} // Passer l'ID de la demande
-          onClose={handleClosePaiement}
-          onPaymentComplete={handlePaymentComplete}
-        />
-      )}
+              </div>
+            )}
+            
+            {/* Composant de paiement */}
+            {showPaiement && createdDemandeId && (
+              <PaiementOptions
+                demandeId={createdDemandeId} // Passer l'ID de la demande
+                onClose={handleClosePaiement}
+                onPaymentComplete={handlePaymentComplete}
+              />
+            )}
+          </>
+        )}
+      </main>
     </div>
   );
 };

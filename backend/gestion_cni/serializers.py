@@ -48,56 +48,28 @@ class CitoyenSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        # Extraire les données de l'utilisateur
-        utilisateur_data = validated_data.pop('utilisateur') if 'utilisateur' in validated_data else {}
-        
-        # Forcer le type utilisateur à 'citoyen'
-        utilisateur_data['type_utilisateur'] = 'citoyen'
-        
-        # Log pour débogage
         import logging
         logger = logging.getLogger(__name__)
-        logger.info(f"Création d'un utilisateur citoyen avec les données: {utilisateur_data}")
-        
+
+        utilisateur_data = validated_data.pop('utilisateur')
+        utilisateur_data['type_utilisateur'] = 'citoyen'
+
         try:
-            # S'assurer que l'utilisateur est actif
-            utilisateur_data['is_active'] = True
+            # Utilisation de la méthode create_user qui gère le hachage du mot de passe
+            utilisateur = Utilisateur.objects.create_user(**utilisateur_data)
             
-            # Récupérer le mot de passe pour le hasher correctement
-            password = utilisateur_data.pop('password', None)
+            # Créer le profil citoyen associé
+            citoyen = Citoyen.objects.create(utilisateur=utilisateur, **validated_data)
             
-            # Créer l'utilisateur sans le mot de passe
-            utilisateur = Utilisateur(**utilisateur_data)
-            
-            # Définir le mot de passe en utilisant explicitement set_password
-            if password:
-                utilisateur.set_password(password)
-            
-            # Sauvegarder l'utilisateur
-            utilisateur.save()
-            
-            # Créer un profil citoyen vide avec des valeurs par défaut
-            # Générer un NIN temporaire unique basé sur l'horodatage
-            import time
-            temp_nin = f"TEMP-{int(time.time())}-{utilisateur.id}"
-            
-            citoyen = Citoyen.objects.create(
-                utilisateur=utilisateur,
-                nin=temp_nin,  # NIN temporaire unique
-                sexe='M',     # Valeur par défaut
-                nationalite="Guinéenne",  # Valeur par défaut
-                situation_matrimoniale="celibataire"  # Valeur par défaut
-            )
-            
-            logger.info(f"Citoyen créé avec succès: {citoyen.nin}")
+            logger.info(f"Utilisateur et Citoyen créés avec succès pour {utilisateur.username}")
             return citoyen
-            
+
         except Exception as e:
-            logger.error(f"Erreur lors de la création du citoyen: {str(e)}")
-            # Si l'utilisateur a été créé mais pas le citoyen, supprimer l'utilisateur
-            if 'utilisateur' in locals():
+            logger.error(f"Erreur critique lors de la création du citoyen/utilisateur : {str(e)}")
+            # Si l'utilisateur a été créé, mais pas le citoyen, il faut le supprimer pour éviter les comptes orphelins.
+            if 'utilisateur' in locals() and Utilisateur.objects.filter(pk=utilisateur.pk).exists():
                 utilisateur.delete()
-            raise  # Relancer l'exception pour que l'API retourne l'erreur
+            raise serializers.ValidationError(f"Impossible de créer le compte : {e}")
 
 class AgentSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='pk', read_only=True)

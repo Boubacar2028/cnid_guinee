@@ -130,20 +130,30 @@ class DemandeViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         if self.request.user.type_utilisateur == 'citoyen':
-            serializer.save(citoyen=self.request.user.citoyen)
+            citoyen = self.request.user.citoyen
+            data = self.request.data
+
+            # Liste des champs du modèle Citoyen à mettre à jour depuis les données du formulaire
+            # Note: les clés sont en snake_case car le frontend les convertit
+            fields_to_update = [
+                'nom', 'prenom', 'date_naissance', 'lieu_naissance', 'nin',
+                'sexe', 'statut_nationalite', 'profession', 'domicile',
+                'situation_matrimoniale', 'taille', 'teint', 'signes_particuliers',
+                'couleur_cheveux', 'prenom_pere', 'prenom_mere', 'nom_mere'
+            ]
+
+            # Mettre à jour le profil du citoyen
+            for field in fields_to_update:
+                if field in data and data[field]:
+                    setattr(citoyen, field, data[field])
+            
+            citoyen.save()
+
+            # Créer la demande en l'associant au citoyen mis à jour
+            serializer.save(citoyen=citoyen)
         else:
-            # Pourrait être un agent ou admin créant une demande pour un citoyen spécifique (à gérer si besoin)
-            # Pour l'instant, on assume que seuls les citoyens créent leurs propres demandes via l'API.
-            # Si un citoyen_id est fourni dans les données, on pourrait l'utiliser ici.
-            # raise PermissionDenied("Seuls les citoyens peuvent créer des demandes via cette interface.")
-            # Ou, si on permet aux admins/agents de créer pour d'autres :
-            # citoyen_id = self.request.data.get('citoyen_id')
-            # if citoyen_id:
-            #     citoyen_obj = get_object_or_404(Citoyen, id=citoyen_id)
-            #     serializer.save(citoyen=citoyen_obj)
-            # else:
-            #     raise serializers.ValidationError("citoyen_id est requis pour les agents/admins.")
-            serializer.save() # Comportement actuel, peut nécessiter citoyen_id dans la requête
+            # Logique existante pour les autres types d'utilisateurs
+            serializer.save()
 
 class PaiementViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -232,11 +242,50 @@ class ChangePasswordView(generics.UpdateAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class CheckActiveDemandeView(APIView):
+    """
+    Vérifie si l'utilisateur connecté a une demande de CNI active.
+    Une demande est considérée comme active si son statut n'est ni 'REJETEE' ni 'TERMINEE'.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        logger.info(f"[CheckActiveDemande] - Vérification pour l'utilisateur: {user.username} (ID: {user.id})")
+
+        try:
+            citoyen = user.citoyen
+            all_demandes = Demande.objects.filter(citoyen=citoyen)
+            all_demandes_details = [f"(ID: {d.id}, Statut: {d.statut})" for d in all_demandes]
+            logger.info(f"[CheckActiveDemande] - Toutes les demandes trouvées pour le citoyen {citoyen.id}: {all_demandes_details if all_demandes_details else 'Aucune'}")
+
+            # Statuts qui ne sont PAS considérés comme actifs
+            inactive_statuses = ['rejetee', 'validee']
+            
+            has_active_demande = all_demandes.exclude(
+                statut__in=inactive_statuses
+            ).exists()
+            
+            logger.info(f"[CheckActiveDemande] - Le statut 'has_active_demande' est: {has_active_demande}")
+            
+            return Response({'has_active_demande': has_active_demande})
+
+        except (Citoyen.DoesNotExist, AttributeError):
+            # C'est un état critique si un 'citoyen' n'a pas de profil Citoyen.
+            if user.type_utilisateur == 'citoyen':
+                logger.error(f"[CheckActiveDemande] - ERREUR CRITIQUE: Aucun profil citoyen trouvé pour l'utilisateur {user.username} qui est de type 'citoyen'.")
+                # On retourne True par sécurité pour empêcher la création de nouvelles demandes.
+                return Response({'has_active_demande': True, 'error': 'Incohérence de données pour ce compte.'})
+        
+            # Pour les admins/agents, c'est un comportement normal.
+            logger.info(f"[CheckActiveDemande] - Aucun profil citoyen trouvé pour l'utilisateur: {user.username} (type: {user.type_utilisateur}). Comportement normal pour un admin/agent.")
+            return Response({'has_active_demande': False})
 class AgentDashboardStatsView(APIView):
     """
     Fournit les statistiques pour le tableau de bord de l'agent connecté.
     Les statistiques incluent :
     - Demandes en attente (statut 'en_cours')
+    - Demandes traitées (statut 'approuvé' ou 'rejeté')
     - Demandes traitées (statut 'approuve' ou 'rejete')
     - Total de citoyens dans le système
     """
@@ -309,7 +358,7 @@ def get_statistics(request):
     logger.info(f"Nombre d'agents: {agents_count}")
     
     # Récupérer le nombre de demandes traitées (statut "approuvé")
-    processed_requests_count = Demande.objects.filter(statut='approuve').count()
+    processed_requests_count = Demande.objects.filter(statut='validee').count()
     logger.info(f"Nombre de demandes traitées: {processed_requests_count}")
     
     # Taux de satisfaction (fixé à 98% pour l'instant)
@@ -707,7 +756,7 @@ class InitierPaiementView(APIView):
         if serializer.is_valid():
             # Le serializer.save() va appeler PaiementSerializer.create()
             # Le montant est maintenant dans validated_data grâce à paiement_data
-            paiement = serializer.save()
+            paiement = serializer.save(demande=demande)
             
             # Simuler une réponse de l'opérateur de paiement
             # Dans un vrai scénario, vous appelleriez une API externe ici
