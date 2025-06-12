@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import PasswordChangeModal from './Modals/PasswordChangeModal';
 import BiometricModal from './Modals/BiometricModal';
 import AgentHeader from './AgentHeader';
-import DemandesSection from './Sections/DemandesSection';
+import DemandesEnCours from './DemandesEnCours';
 
 
 
@@ -21,34 +22,77 @@ const AgentPortal = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordChangeLoading, setPasswordChangeLoading] = useState(false);
+  const [passwordChangeError, setPasswordChangeError] = useState(null);
+  const [passwordChangeSuccess, setPasswordChangeSuccess] = useState('');
+  const [dashboardStats, setDashboardStats] = useState({ demandesNonTraitees: 0, demandesTraitees: 0, totalCitoyens: 0 });
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState(null);
   
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setPasswordData({ ...passwordData, [name]: value });
   };
   
-  const handleSubmit = () => {
-    // Vérification que les mots de passe correspondent
+  const handleSubmit = async () => {
+    setPasswordChangeError(null);
+    setPasswordChangeSuccess('');
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert("Les mots de passe ne correspondent pas.");
+      setPasswordChangeError("Les nouveaux mots de passe ne correspondent pas.");
       return;
     }
-    
-    // Vérification de la longueur minimale
-    if (passwordData.newPassword.length < 8) {
-      alert("Le mot de passe doit contenir au moins 8 caractères.");
-      return;
+    if (!passwordData.currentPassword || !passwordData.newPassword) {
+        setPasswordChangeError("Veuillez remplir tous les champs.");
+        return;
     }
-    
-    // Simuler la mise à jour du mot de passe
-    alert("Mot de passe modifié avec succès!");
-    setShowPasswordModal(false);
-    // Réinitialiser les données du formulaire
-    setPasswordData({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    });
+
+    setPasswordChangeLoading(true);
+
+    try {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            setPasswordChangeError('Authentification requise. Veuillez vous reconnecter.');
+            setPasswordChangeLoading(false);
+            return;
+        }
+
+        await axios.put('http://localhost:8000/api/change-password/', {
+            old_password: passwordData.currentPassword,
+            new_password: passwordData.newPassword,
+            new_password_confirm: passwordData.confirmPassword
+        }, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        setPasswordChangeSuccess("Mot de passe modifié avec succès !");
+        
+        setTimeout(() => {
+            setShowPasswordModal(false);
+            setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+            setPasswordChangeSuccess('');
+            setPasswordChangeError(null);
+        }, 2000);
+
+    } catch (err) {
+        let errorMsg = "Une erreur est survenue.";
+        if (err.response && err.response.data) {
+            const errors = err.response.data;
+            const messages = Object.values(errors).flat();
+            if (messages.length > 0) {
+                errorMsg = messages.join(' ');
+            } else if (errors.detail) {
+                errorMsg = errors.detail;
+            }
+        } else {
+            errorMsg = err.message || 'Une erreur de connexion est survenue.';
+        }
+        setPasswordChangeError(errorMsg);
+    } finally {
+        setPasswordChangeLoading(false);
+    }
   };
 
   // Fonction pour détecter si l'appareil est mobile
@@ -57,15 +101,70 @@ const AgentPortal = () => {
   };
 
   useEffect(() => {
-    // Vérifier la taille de l'écran au chargement
+    // Vérifier la taille de l'écran au chargement initial
     checkDeviceSize();
     
-    // Ajouter un listener pour les changements de taille d'écran
+    // Écouter les changements de taille de l'écran
     window.addEventListener('resize', checkDeviceSize);
     
-    // Nettoyage du listener
+    // Récupérer les statistiques du tableau de bord
+    const fetchDashboardStats = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+          setStatsError('Authentification requise. Veuillez vous reconnecter.');
+          setStatsLoading(false);
+          return;
+        }
+
+        const response = await axios.get('http://localhost:8000/api/agent/dashboard-stats/', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        setDashboardStats(response.data);
+      } catch (err) {
+        setStatsError(err.response?.data?.detail || err.message || 'Une erreur est survenue lors de la récupération des statistiques.');
+        console.error(err);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    fetchDashboardStats();
+
+    // Nettoyer l'écouteur lors du démontage
     return () => window.removeEventListener('resize', checkDeviceSize);
   }, []);
+
+  useEffect(() => {
+    const fetchDashboardStats = async () => {
+      if (activeSection === 'dashboard') {
+        setStatsLoading(true);
+        setStatsError(null);
+        try {
+          const token = localStorage.getItem('access_token');
+          if (!token) {
+            navigate('/login'); // Rediriger si non authentifié
+            return;
+          }
+          const response = await axios.get('http://localhost:8000/api/agent/dashboard-stats/', {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
+          setDashboardStats(response.data);
+        } catch (error) {
+          console.error("Erreur lors de la récupération des statistiques:", error);
+          setStatsError("Impossible de charger les statistiques.");
+        } finally {
+          setStatsLoading(false);
+        }
+      }
+    };
+
+    fetchDashboardStats();
+  }, [activeSection, navigate]);
 
   // Si l'appareil est mobile, afficher un message d'avertissement
   if (isMobile) {
@@ -106,7 +205,11 @@ const AgentPortal = () => {
       
       <PasswordChangeModal 
         isOpen={showPasswordModal}
-        onClose={() => setShowPasswordModal(false)}
+        onClose={() => {
+          setShowPasswordModal(false);
+          setPasswordChangeError(null);
+          setPasswordChangeSuccess('');
+        }}
         passwordData={passwordData}
         setPasswordData={setPasswordData}
         handleSubmit={handleSubmit}
@@ -116,6 +219,9 @@ const AgentPortal = () => {
         setShowNewPassword={setShowNewPassword}
         showConfirmPassword={showConfirmPassword}
         setShowConfirmPassword={setShowConfirmPassword}
+        loading={passwordChangeLoading}
+        error={passwordChangeError}
+        success={passwordChangeSuccess}
       />
       
       {/* Navigation principale */}
@@ -174,166 +280,172 @@ const AgentPortal = () => {
                 </div>
               </div>
 
-          {/* Cartes statistiques */}
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-            {/* Carte 1: En attente de traitement */}
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 bg-red-100 rounded-md p-3">
-                    <svg className="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
-                    </svg>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">En attente de traitement</dt>
-                      <dd>
-                        <div className="text-3xl font-bold text-red-600">0</div>
-                        <div className="text-xs text-gray-500">Demandes à traiter</div>
-                      </dd>
-                    </dl>
+              {/* Cartes statistiques */}
+              {statsError && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">{statsError}</div>}
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+                {/* Carte 1: En attente de traitement */}
+                <div className="bg-white overflow-hidden shadow rounded-lg">
+                  <div className="p-5">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 bg-red-100 rounded-md p-3">
+                        <svg className="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
+                        </svg>
+                      </div>
+                      <div className="ml-5 w-0 flex-1">
+                        <dl>
+                          <dt className="text-sm font-medium text-gray-500 truncate">Demandes non traitées</dt>
+                          <dd>
+                            {statsLoading ? (
+                              <div className="h-8 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+                            ) : (
+                              <div className="text-3xl font-bold text-red-600">{dashboardStats.demandesNonTraitees}</div>
+                            )}
+                            <div className="text-xs text-gray-500">Statut 'en_cours'</div>
+                            <div className="text-xs text-gray-500">Non traitées</div>
+                          </dd>
+                        </dl>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Carte 2: Demandes traitées */}
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 bg-green-100 rounded-md p-3">
-                    <svg className="h-6 w-6 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Demandes traitées</dt>
-                      <dd>
-                        <div className="text-3xl font-bold text-green-600">0</div>
-                        <div className="text-xs text-gray-500">Approuvées ce mois</div>
-                      </dd>
-                    </dl>
+                {/* Carte 2: Demandes traitées */}
+                <div className="bg-white overflow-hidden shadow rounded-lg">
+                  <div className="p-5">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 bg-green-100 rounded-md p-3">
+                        <svg className="h-6 w-6 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div className="ml-5 w-0 flex-1">
+                        <dl>
+                          <dt className="text-sm font-medium text-gray-500 truncate">Demandes traitées</dt>
+                          <dd>
+                            {statsLoading ? (
+                              <div className="h-8 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+                            ) : (
+                              <div className="text-3xl font-bold text-green-600">{dashboardStats.demandesTraitees}</div>
+                            )}
+                            <div className="text-xs text-gray-500">Statut 'approuve' ou 'rejete'</div>
+                            <div className="text-xs text-gray-500">Traitées</div>
+                          </dd>
+                        </dl>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Carte 3: Biométrie à débloquer */}
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 bg-yellow-100 rounded-md p-3">
-                    <svg className="h-6 w-6 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Biométrie à débloquer</dt>
-                      <dd>
-                        <div className="text-3xl font-bold text-yellow-600">0</div>
-                        <div className="text-xs text-gray-500">Section à débloquer</div>
-                      </dd>
-                    </dl>
+                {/* Carte 3: Biométrie à débloquer */}
+                <div className="bg-white overflow-hidden shadow rounded-lg">
+                  <div className="p-5">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 bg-yellow-100 rounded-md p-3">
+                        <svg className="h-6 w-6 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      </div>
+                      <div className="ml-5 w-0 flex-1">
+                        <dl>
+                          <dt className="text-sm font-medium text-gray-500 truncate">Total citoyens</dt>
+                          <dd>
+                            {statsLoading ? (
+                              <div className="h-8 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+                            ) : (
+                              <div className="text-3xl font-bold text-green-600">{dashboardStats.totalCitoyens}</div>
+                            )}
+                            <div className="text-xs text-gray-500">Dans le système</div>
+                          </dd>
+                        </dl>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Carte 4: Total citoyens */}
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 bg-green-100 rounded-md p-3">
-                    <svg className="h-6 w-6 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Total citoyens</dt>
-                      <dd>
-                        <div className="text-3xl font-bold text-green-600">0</div>
-                        <div className="text-xs text-gray-500">Dans le système</div>
-                      </dd>
-                    </dl>
+                {/* Carte 4: Total citoyens */}
+                <div className="bg-white overflow-hidden shadow rounded-lg">
+                  <div className="p-5">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 bg-green-100 rounded-md p-3">
+                        <svg className="h-6 w-6 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </div>
+                      <div className="ml-5 w-0 flex-1">
+                        <dl>
+                          <dt className="text-sm font-medium text-gray-500 truncate">Biométrie à débloquer</dt>
+                          <dd>
+                            <div className="text-3xl font-bold text-yellow-600">0</div>
+                            <div className="text-xs text-gray-500">Section à débloquer</div>
+                          </dd>
+                        </dl>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Sections Rappels et Notifications */}
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-            {/* Rappels biométriques */}
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="px-5 py-4 border-b border-gray-200">
-                <div className="flex items-center">
-                  <svg className="h-5 w-5 text-yellow-600 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <h3 className="text-lg font-medium text-gray-900">Rappels biométriques</h3>
-                </div>
-              </div>
-              <div className="px-5 py-4">
-                <div className="mb-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="text-sm font-medium text-gray-900">RDV biométriques demain</h4>
-                    <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">0</span>
+              {/* Sections Rappels et Notifications */}
+              <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                {/* Rappels biométriques */}
+                <div className="bg-white overflow-hidden shadow rounded-lg">
+                  <div className="px-5 py-4 border-b border-gray-200">
+                    <div className="flex items-center">
+                      <svg className="h-5 w-5 text-yellow-600 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <h3 className="text-lg font-medium text-gray-900">Rappels biométriques</h3>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-600">0 citoyens ont un RDV dans 24h</p>
+                  <div className="px-5 py-4">
+                    <div className="mb-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="text-sm font-medium text-gray-900">RDV biométriques demain</h4>
+                        <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">0</span>
+                      </div>
+                      <p className="text-sm text-gray-600">0 citoyens ont un RDV dans 24h</p>
+                    </div>
+                    <button className="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded flex items-center justify-center">
+                      <svg className="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      Envoyer rappels RDV
+                    </button>
+                  </div>
                 </div>
-                <button className="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded flex items-center justify-center">
-                  <svg className="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                  Envoyer rappels RDV
-                </button>
-              </div>
-            </div>
 
-            {/* Notifications biométriques */}
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="px-5 py-4 border-b border-gray-200">
-                <div className="flex items-center">
-                  <svg className="h-5 w-5 text-red-600 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                  <h3 className="text-lg font-medium text-gray-900">Notifications biométriques</h3>
-                </div>
-              </div>
-              <div className="px-5 py-4">
-                <div className="mb-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="text-sm font-medium text-gray-900">Sections à débloquer</h4>
-                    <span className="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded">0</span>
+                {/* Notifications biométriques */}
+                <div className="bg-white overflow-hidden shadow rounded-lg">
+                  <div className="px-5 py-4 border-b border-gray-200">
+                    <div className="flex items-center">
+                      <svg className="h-5 w-5 text-red-600 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                      </svg>
+                      <h3 className="text-lg font-medium text-gray-900">Notifications biométriques</h3>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-600">0 citoyens doivent prendre rendez-vous</p>
+                  <div className="px-5 py-4">
+                    <div className="mb-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="text-sm font-medium text-gray-900">Sections à débloquer</h4>
+                        <span className="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded">0</span>
+                      </div>
+                      <p className="text-sm text-gray-600">0 citoyens doivent prendre rendez-vous</p>
+                    </div>
+                    <button className="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded flex items-center justify-center">
+                      <svg className="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                      </svg>
+                      Notifier pour RDV
+                    </button>
+                  </div>
                 </div>
-                <button className="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded flex items-center justify-center">
-                  <svg className="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                  Notifier pour RDV
-                </button>
               </div>
-            </div>
-          </div>
             </>
           ) : activeSection === 'demandes' ? (
-            <>
-              {/* Titre de la section Demandes */}
-              <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Demandes</h1>
-                <p className="text-gray-600 mt-1">Gestion des demandes de carte d'identité</p>
-              </div>
-              
-              {/* Contenu des demandes */}
-              <DemandesSection />
-            </>
+            <DemandesEnCours />
           ) : null}
         </div>
       </main>

@@ -17,12 +17,15 @@ from .views import (
     TelechargerRecuView,
     UserDemandesView,
     DemandeDetailView, # Ajout de DemandeDetailView
+    DemandesEnCoursListView,
 
     # Vues pour l'historique
     HistoriqueCitoyensView,
     HistoriqueAgentsView,
     HistoriquePaiementsView,
-    HistoriqueDemandesView
+    HistoriqueDemandesView,
+    ChangePasswordView,
+    AgentDashboardStatsView
 )
 
 router = DefaultRouter()
@@ -37,6 +40,7 @@ urlpatterns = [
     # Endpoints d'authentification
     path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('change-password/', ChangePasswordView.as_view(), name='change_password'),
     
     # Endpoints statistiques
     path('statistics/', get_statistics, name='statistics'),
@@ -53,6 +57,10 @@ urlpatterns = [
     path('notifications/<int:pk>/telecharger-recu/', TelechargerRecuView.as_view(), name='notification_telecharger_recu'),
     path('mes-demandes/', UserDemandesView.as_view(), name='user_demandes_list'),
     path('demandes/<int:pk>/', DemandeDetailView.as_view(), name='demande-detail'),
+
+    # Endpoint pour les agents
+    path('agent/demandes-en-cours/', DemandesEnCoursListView.as_view(), name='agent_demandes_en_cours'),
+    path('agent/dashboard-stats/', AgentDashboardStatsView.as_view(), name='agent_dashboard_stats'),
     
 
 

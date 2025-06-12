@@ -1,8 +1,17 @@
 import React from 'react';
-import { FileText, Upload, Check, User, Ruler, Users, PlusCircle, RefreshCw, Copy } from 'lucide-react';
+import { FileText, Upload, Check, User, Ruler, Users, PlusCircle, RefreshCw, Copy, ChevronRight, ChevronLeft, AlertCircle, Info } from 'lucide-react';
 
 // Composant pour afficher les étapes de la demande
-const DemandeEtapes = ({ etape, setEtape, formData, handleChange, fichierSelectionne, setFichierSelectionne }) => {
+const DemandeEtapes = ({ 
+  etape, 
+  formData, 
+  handleChange, 
+  documents, 
+  handleFileChange,
+  validationErrors,
+  handleNext,
+  handlePrevious
+}) => {
   return (
     <>
       {etape === 1 && (
@@ -86,10 +95,13 @@ const DemandeEtapes = ({ etape, setEtape, formData, handleChange, fichierSelecti
                 type="text"
                 value={formData.nom}
                 onChange={(e) => handleChange('nom', e.target.value)}
-                className="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className={`w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 ${validationErrors.etape2?.nom ? 'border-red-500' : ''}`}
                 placeholder="Votre nom de famille"
                 required
               />
+              {validationErrors.etape2?.nom && (
+                <p className="text-sm text-red-500 mt-1">{validationErrors.etape2.nom}</p>
+              )}
             </div>
             
             <div>
@@ -307,9 +319,7 @@ const DemandeEtapes = ({ etape, setEtape, formData, handleChange, fichierSelecti
           <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
             <div className="flex">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <Info className="h-5 w-5 text-blue-500" />
               </div>
               <div className="ml-3">
                 <p className="text-sm text-blue-700">
@@ -375,9 +385,7 @@ const DemandeEtapes = ({ etape, setEtape, formData, handleChange, fichierSelecti
           <div className="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
             <div className="flex">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <Info className="h-5 w-5 text-yellow-500" />
               </div>
               <div className="ml-3">
                 <p className="text-sm text-yellow-700">
@@ -397,53 +405,67 @@ const DemandeEtapes = ({ etape, setEtape, formData, handleChange, fichierSelecti
           </h2>
           
           <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="rounded-lg border border-dashed border-gray-300 p-4 hover:bg-gray-50 transition-colors cursor-pointer relative">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Extrait de naissance */}
+              <div className={`rounded-lg border border-dashed p-4 transition-colors cursor-pointer relative ${documents.extraitNaissance ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:bg-gray-100'}`}>
                 <input 
                   type="file" 
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
-                  id="document1" 
-                  onChange={(e) => setFichierSelectionne(e.target.files[0])}
+                  onChange={(e) => handleFileChange('extraitNaissance', e.target.files[0])}
+                  accept=".pdf,.jpg,.jpeg,.png"
                 />
                 <div className="text-center py-4">
-                  <Upload className="mx-auto h-10 w-10 text-gray-400" />
-                  <p className="mt-2 text-sm text-gray-500">Extrait de naissance sécurisé</p>
-                  <p className="text-xs text-gray-400 mt-1">Glissez-déposez ou cliquez pour choisir</p>
+                  {documents.extraitNaissance ? <Check className="mx-auto h-10 w-10 text-green-500" /> : <Upload className="mx-auto h-10 w-10 text-gray-400" />}
+                  <p className="mt-2 text-sm text-gray-600">Extrait de naissance</p>
+                  {documents.extraitNaissance ? 
+                    <p className="text-xs text-green-600 mt-1 truncate">{documents.extraitNaissance.name}</p> : 
+                    <p className="text-xs text-gray-400 mt-1">Cliquez pour choisir</p>}
                 </div>
               </div>
               
-              <div className="rounded-lg border border-dashed border-gray-300 p-4 hover:bg-gray-50 transition-colors cursor-pointer relative">
-                <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="document2" />
+              {/* Certificat de résidence */}
+              <div className={`rounded-lg border border-dashed p-4 transition-colors cursor-pointer relative ${documents.certificatResidence ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:bg-gray-100'}`}>
+                <input 
+                  type="file" 
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                  onChange={(e) => handleFileChange('certificatResidence', e.target.files[0])}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                />
                 <div className="text-center py-4">
-                  <Upload className="mx-auto h-10 w-10 text-gray-400" />
-                  <p className="mt-2 text-sm text-gray-500">Certificat de résidence</p>
-                  <p className="text-xs text-gray-400 mt-1">Glissez-déposez ou cliquez pour choisir</p>
+                  {documents.certificatResidence ? <Check className="mx-auto h-10 w-10 text-green-500" /> : <Upload className="mx-auto h-10 w-10 text-gray-400" />}
+                  <p className="mt-2 text-sm text-gray-600">Certificat de résidence</p>
+                  {documents.certificatResidence ? 
+                    <p className="text-xs text-green-600 mt-1 truncate">{documents.certificatResidence.name}</p> : 
+                    <p className="text-xs text-gray-400 mt-1">Cliquez pour choisir</p>}
                 </div>
               </div>
               
-              <div className="rounded-lg border border-dashed border-gray-300 p-4 hover:bg-gray-50 transition-colors cursor-pointer relative">
-                <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="document3" />
+              {/* Photo d'identité */}
+              <div className={`rounded-lg border border-dashed p-4 transition-colors cursor-pointer relative ${documents.photoIdentite ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:bg-gray-100'}`}>
+                <input 
+                  type="file" 
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                  onChange={(e) => handleFileChange('photoIdentite', e.target.files[0])}
+                  accept=".jpg,.jpeg,.png"
+                />
                 <div className="text-center py-4">
-                  <Upload className="mx-auto h-10 w-10 text-gray-400" />
-                  <p className="mt-2 text-sm text-gray-500">Photo d'identité récente</p>
-                  <p className="text-xs text-gray-400 mt-1">Glissez-déposez ou cliquez pour choisir</p>
+                  {documents.photoIdentite ? <Check className="mx-auto h-10 w-10 text-green-500" /> : <Upload className="mx-auto h-10 w-10 text-gray-400" />}
+                  <p className="mt-2 text-sm text-gray-600">Photo d'identité</p>
+                  {documents.photoIdentite ? 
+                    <p className="text-xs text-green-600 mt-1 truncate">{documents.photoIdentite.name}</p> : 
+                    <p className="text-xs text-gray-400 mt-1">Cliquez pour choisir</p>}
                 </div>
               </div>
             </div>
             
-            {fichierSelectionne && (
-              <div className="flex items-center p-2 bg-green-50 rounded-lg border border-green-100">
-                <Check size={20} className="text-green-600 mr-2" />
-                <span className="text-sm text-green-700">{fichierSelectionne.name} sélectionné</span>
-              </div>
+            {validationErrors.etape5?.documents && (
+              <p className="text-sm text-red-500 text-center mt-4">{validationErrors.etape5.documents}</p>
             )}
             
             <div className="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
+                  <AlertCircle className="h-5 w-5 text-yellow-500" />
                 </div>
                 <div className="ml-3">
                   <p className="text-sm text-yellow-700">
@@ -471,7 +493,7 @@ const DemandeEtapes = ({ etape, setEtape, formData, handleChange, fichierSelecti
                 <p className="text-sm text-gray-500">Type de demande</p>
                 <p className="font-medium">
                   {formData.typeDemande === 'premiere' ? 'Première demande' : 
-                   formData.typeDemande === 'renouvellement' ? 'Renouvellement' : 'Perte ou vol'}
+                   formData.typeDemande === 'renouvellement' ? 'Renouvellement' : 'Duplicata'}
                 </p>
               </div>
               
@@ -499,22 +521,7 @@ const DemandeEtapes = ({ etape, setEtape, formData, handleChange, fichierSelecti
                 <p className="text-sm text-gray-500">Sexe</p>
                 <p className="font-medium">{formData.sexe}</p>
               </div>
-              
-              <div>
-                <p className="text-sm text-gray-500">Statut de nationalité</p>
-                <p className="font-medium">{formData.statutNationalite}</p>
-              </div>
-              
-              <div>
-                <p className="text-sm text-gray-500">Profession</p>
-                <p className="font-medium">{formData.profession}</p>
-              </div>
-              
-              <div>
-                <p className="text-sm text-gray-500">Domicile</p>
-                <p className="font-medium">{formData.domicile}</p>
-              </div>
-              
+             
               <div>
                 <p className="text-sm text-gray-500">Situation matrimoniale</p>
                 <p className="font-medium">{formData.situationMatrimoniale}</p>
@@ -567,16 +574,21 @@ const DemandeEtapes = ({ etape, setEtape, formData, handleChange, fichierSelecti
             <div className="mb-6 pb-4 border-b border-gray-200">
               <p className="text-sm text-gray-500 mb-2">Documents téléchargés</p>
               <div className="space-y-2">
-                {fichierSelectionne ? (
-                  <div className="flex items-center">
-                    <Check size={16} className="text-green-600 mr-2" />
-                    <span className="text-sm">{fichierSelectionne.name}</span>
-                  </div>
-                ) : (
-                  <p className="text-sm text-red-500">Aucun document sélectionné</p>
+                {Object.entries(documents).map(([key, file]) => (
+                  file ? (
+                    <div key={key} className="flex items-center">
+                      <Check size={16} className="text-green-600 mr-2" />
+                      <span className="text-sm font-medium text-gray-700">{file.name}</span>
+                    </div>
+                  ) : null
+                ))}
+                {Object.values(documents).every(file => !file) && (
+                  <p className="text-sm text-red-500">Aucun document n'a été téléversé.</p>
                 )}
               </div>
             </div>
+            
+            
             
             <div className="flex items-center mb-4">
               <input type="checkbox" id="terms" className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" required />
@@ -587,6 +599,7 @@ const DemandeEtapes = ({ etape, setEtape, formData, handleChange, fichierSelecti
           </div>
         </div>
       )}
+
     </>
   );
 };

@@ -6,7 +6,32 @@ import PaiementOptions from './PaiementOptions';
 import { API_URL } from '../../constants';
 
 const NouvelleDemandePage = () => {
+  // États pour chaque étape
   const [etape, setEtape] = useState(1);
+  const [etape1Complete, setEtape1Complete] = useState(false);
+  const [etape2Complete, setEtape2Complete] = useState(false);
+  const [etape3Complete, setEtape3Complete] = useState(false);
+  const [etape4Complete, setEtape4Complete] = useState(false);
+  const [etape5Complete, setEtape5Complete] = useState(false);
+  const [etape6Complete, setEtape6Complete] = useState(false);
+  const [etape7Complete, setEtape7Complete] = useState(false);
+  const [etape8Complete, setEtape8Complete] = useState(false);
+  const [etape9Complete, setEtape9Complete] = useState(false);
+  const [etape10Complete, setEtape10Complete] = useState(false);
+  
+  // États pour les erreurs de validation
+  const [validationErrors, setValidationErrors] = useState({
+    etape1: {},
+    etape2: {},
+    etape3: {},
+    etape4: {},
+    etape5: {},
+    etape6: {},
+    etape7: {},
+    etape8: {},
+    etape9: {},
+    etape10: {}
+  });
   const [fichierSelectionne, setFichierSelectionne] = useState(null);
   const [showPaiement, setShowPaiement] = useState(false);
   const [demandeComplete, setDemandeComplete] = useState(false);
@@ -15,6 +40,13 @@ const NouvelleDemandePage = () => {
   const [submissionError, setSubmissionError] = useState(null);
   const [createdDemandeNumeroSuivi, setCreatedDemandeNumeroSuivi] = useState(null);
   const [createdDemandeId, setCreatedDemandeId] = useState(null); // ID de la demande pour le paiement
+
+  // État pour les documents uploadés
+  const [documents, setDocuments] = useState({
+    extraitNaissance: null,
+    certificatResidence: null,
+    photoIdentite: null,
+  });
   
   // État unique pour toutes les données du formulaire
   const [formData, setFormData] = useState({
@@ -52,7 +84,91 @@ const NouvelleDemandePage = () => {
     }));
   };
 
-  // Gestion de la soumission du formulaire
+  // Gestion de la sélection des fichiers
+  const handleFileChange = (type, file) => {
+    setDocuments(prev => ({ ...prev, [type]: file }));
+  };
+
+  // Validation des champs pour chaque étape
+  const validateEtape = (etapeNum) => {
+    const errors = {};
+
+    // La validation est effectuée à chaque fois pour garantir la cohérence des données
+    switch (etapeNum) {
+      case 1: // Type de demande
+        if (!formData.typeDemande) {
+          errors.typeDemande = "Veuillez sélectionner un type de demande";
+        }
+        break;
+      case 2: // Informations personnelles
+        if (!formData.nom) errors.nom = "Le nom est requis";
+        if (!formData.prenom) errors.prenom = "Le prénom est requis";
+        if (!formData.dateNaissance) errors.dateNaissance = "La date de naissance est requise";
+        if (!formData.lieuNaissance) errors.lieuNaissance = "Le lieu de naissance est requis";
+        if (!formData.nin) errors.nin = "Le NIN est requis";
+        if (!formData.sexe) errors.sexe = "Le sexe est requis";
+        if (!formData.statutNationalite) errors.statutNationalite = "Le statut de nationalité est requis";
+        if (!formData.profession) errors.profession = "La profession est requise";
+        if (!formData.domicile) errors.domicile = "Le domicile est requis";
+        if (!formData.situationMatrimoniale) errors.situationMatrimoniale = "La situation matrimoniale est requise";
+        break;
+      case 3: // Signalement
+        if (!formData.taille) errors.taille = "La taille est requise";
+        if (!formData.teint) errors.teint = "Le teint est requis";
+        if (!formData.couleurCheveux) errors.couleurCheveux = "La couleur des cheveux est requise";
+        break;
+      case 4: // Informations ascendantes
+        if (!formData.prenomPere) errors.prenomPere = "Le prénom du père est requis";
+        if (!formData.prenomMere) errors.prenomMere = "Le prénom de la mère est requis";
+        if (!formData.nomMere) errors.nomMere = "Le nom de la mère est requis";
+        break;
+      case 5: // Documents
+        if (!documents.extraitNaissance || !documents.certificatResidence || !documents.photoIdentite) {
+          errors.documents = "Veuillez téléverser tous les documents requis.";
+        }
+        break;
+      default:
+        break;
+    }
+    return errors;
+  };
+
+  // Fonction pour passer à l'étape suivante
+  const handleNext = (currentEtape) => {
+    const errors = validateEtape(currentEtape);
+    setValidationErrors(prevErrors => ({
+      ...prevErrors,
+      [`etape${currentEtape}`]: errors
+    }));
+
+    if (Object.keys(errors).length === 0) {
+      // Si aucune erreur, marquer l'étape comme complète et passer à la suivante
+      const etapeCompleteState = `etape${currentEtape}Complete`;
+      setEtape(prev => {
+        // Utiliser l'état approprié en fonction de l'étape
+        switch (currentEtape) {
+          case 1: setEtape1Complete(true); break;
+          case 2: setEtape2Complete(true); break;
+          case 3: setEtape3Complete(true); break;
+          case 4: setEtape4Complete(true); break;
+          case 5: setEtape5Complete(true); break;
+          case 6: setEtape6Complete(true); break;
+          case 7: setEtape7Complete(true); break;
+          case 8: setEtape8Complete(true); break;
+          case 9: setEtape9Complete(true); break;
+          case 10: setEtape10Complete(true); break;
+        }
+        return prev + 1;
+      });
+    }
+  };
+
+  // Fonction pour revenir à l'étape précédente
+  const handlePrevious = () => {
+    setEtape(prev => prev - 1);
+  };
+
+  // Gestion de la soumission finale du formulaire
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -217,15 +333,19 @@ const NouvelleDemandePage = () => {
               </div>
               
               <form className="space-y-8" onSubmit={handleSubmit}>
-                {/* Contenu des étapes via le composant DemandeEtapes */}
-                <DemandeEtapes 
-                  etape={etape} 
-                  setEtape={setEtape} 
-                  formData={formData} 
-                  handleChange={handleChange}
-                  fichierSelectionne={fichierSelectionne}
-                  setFichierSelectionne={setFichierSelectionne}
-                />
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl mt-8">
+                  <CitoyenHeader />
+                  <DemandeEtapes 
+                    etape={etape}
+                    formData={formData}
+                    handleChange={handleChange}
+                    documents={documents}
+                    handleFileChange={handleFileChange}
+                    validationErrors={validationErrors}
+                    handleNext={handleNext}
+                    handlePrevious={handlePrevious}
+                  />
+                </div>
 
                 {submissionError && (
                   <div className="mt-6 p-4 bg-red-100 text-red-700 border border-red-300 rounded-lg text-sm">
@@ -239,7 +359,7 @@ const NouvelleDemandePage = () => {
                   {etape > 1 && (
                     <button
                       type="button"
-                      onClick={() => setEtape(etape - 1)}
+                      onClick={handlePrevious}
                       className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
                       disabled={isSubmitting}
                     >
@@ -251,9 +371,9 @@ const NouvelleDemandePage = () => {
                     {etape < 6 ? (
                       <button
                         type="button"
-                        onClick={() => setEtape(etape + 1)}
-                        className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center ${(!formData.typeDemande && etape === 1) || isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        disabled={(!formData.typeDemande && etape === 1) || isSubmitting}
+                        onClick={() => handleNext(etape)}
+                        className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        disabled={isSubmitting}
                       >
                         Suivant
                         <ChevronRight size={16} className="ml-1" />

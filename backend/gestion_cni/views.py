@@ -1,12 +1,14 @@
 from rest_framework import viewsets, permissions, status, generics
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from .permissions import IsAdmin
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from .permissions import IsAgent, IsAdmin
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.renderers import JSONRenderer
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Q
+from django.contrib.auth import update_session_auth_hash
 import uuid # Pour générer des ID de transaction uniques
 from .models import Citoyen, Agent, Administrateur, ExtraitNaissance, Demande, Notification, Paiement
 from django.http import HttpResponse
@@ -17,15 +19,11 @@ from reportlab.lib.units import inch
 from django.shortcuts import get_object_or_404
 from .models import Demande # Ajout de l'import Demande
 from .serializers import (
-    CitoyenSerializer, AgentSerializer, AdministrateurSerializer,
-    ExtraitNaissanceSerializer, DemandeSerializer, CustomTokenObtainPairSerializer,
-    PaiementSerializer, NotificationSerializer, # Ajout de PaiementSerializer et NotificationSerializer
-    HistoriqueCitoyenSerializer, HistoriqueAgentSerializer, HistoriquePaiementSerializer, HistoriqueDemandeSerializer, # Serializers pour l'historique
- # Serializer pour les détails du citoyen
+    CitoyenSerializer, AgentSerializer, AdministrateurSerializer, ExtraitNaissanceSerializer, 
+    DemandeSerializer, PaiementSerializer, CustomTokenObtainPairSerializer, NotificationSerializer,
+    HistoriqueCitoyenSerializer, HistoriqueAgentSerializer, HistoriquePaiementSerializer, HistoriqueDemandeSerializer,
+    ChangePasswordSerializer
 )
-from rest_framework.views import APIView
-from rest_framework.generics import ListAPIView, UpdateAPIView, RetrieveAPIView
-from rest_framework.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.conf import settings
 import logging
@@ -176,6 +174,110 @@ class PaiementViewSet(viewsets.ReadOnlyModelViewSet):
         
         logger.warning(f"Utilisateur {user.username} avec type_utilisateur non géré ou manquant.")
         return Paiement.objects.none() # Par défaut, ne retourne rien si le type n'est pas géré
+
+
+# Vues spécifiques au portail Agent
+# ==================================
+
+class DemandesEnCoursListView(generics.ListAPIView):
+    """
+    Vue pour que les agents puissent lister toutes les demandes de CNI 
+    qui sont actuellement 'en cours' de traitement.
+    """
+    serializer_class = DemandeSerializer
+    permission_classes = [IsAuthenticated, IsAgent]
+
+    def get_queryset(self):
+        """
+        Cette vue retourne une liste des demandes qui sont assignées à l'agent connecté
+        et qui ont le statut 'en_cours'.
+        """
+        try:
+            agent_profile = self.request.user.agent
+            return Demande.objects.filter(agent_traitant=agent_profile, statut='en_cours')\
+                                .select_related('citoyen__utilisateur')\
+                                .order_by('date_soumission')
+        except AttributeError:
+            # Si l'utilisateur n'a pas de profil agent, ne retourne rien.
+            return Demande.objects.none()
+
+class ChangePasswordView(generics.UpdateAPIView):
+    """
+    Vue pour changer le mot de passe de l'utilisateur authentifié.
+    """
+    serializer_class = ChangePasswordSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        user = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+            # Vérifier l'ancien mot de passe
+            if not user.check_password(serializer.validated_data.get("old_password")):
+                return Response({"old_password": ["Le mot de passe actuel est incorrect."]}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Mettre à jour avec le nouveau mot de passe
+            user.set_password(serializer.validated_data.get("new_password"))
+            user.save()
+
+            # Mettre à jour la session pour que l'utilisateur ne soit pas déconnecté
+            update_session_auth_hash(request, user)
+            
+            return Response({"detail": "Le mot de passe a été changé avec succès."}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AgentDashboardStatsView(APIView):
+    """
+    Fournit les statistiques pour le tableau de bord de l'agent connecté.
+    Les statistiques incluent :
+    - Demandes en attente (statut 'en_cours')
+    - Demandes traitées (statut 'approuve' ou 'rejete')
+    - Total de citoyens dans le système
+    """
+    permission_classes = [IsAuthenticated, IsAgent]
+
+    def get(self, request, *args, **kwargs):
+        agent_user = request.user
+        logger.info(f"Début du traitement des statistiques pour l'agent: {agent_user.username}")
+
+        try:
+            # Le champ 'agent_traitant' est une clé étrangère vers le modèle Agent, pas User.
+            # Nous récupérons donc le profil Agent lié à l'utilisateur connecté.
+            agent_profile = agent_user.agent
+            logger.info(f"Profil agent trouvé: {agent_profile.matricule}")
+
+            # Récupérer toutes les demandes assignées à cet agent
+            demandes_agent = Demande.objects.filter(agent_traitant=agent_profile)
+            
+            # Calcul des statistiques
+            demandes_non_traitees = demandes_agent.filter(statut='en_cours').count()
+            demandes_traitees = demandes_agent.filter(Q(statut='validee') | Q(statut='rejetee')).count()
+            
+            # Le total de citoyens dans le système (tous les citoyens, pas seulement ceux de l'agent)
+            total_citoyens = Citoyen.objects.count()
+
+            stats = {
+                'demandesNonTraitees': demandes_non_traitees,
+                'demandesTraitees': demandes_traitees,
+                'totalCitoyens': total_citoyens
+            }
+            
+            logger.info(f"Statistiques calculées pour {agent_user.username}: {stats}")
+            return Response(stats)
+
+        except AttributeError:
+            logger.error(f"Profil agent non trouvé pour l'utilisateur: {agent_user.username}")
+            return Response({"detail": "Profil agent non trouvé pour cet utilisateur."}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.error(f"Erreur inattendue dans AgentDashboardStatsView pour {agent_user.username}: {e}", exc_info=True)
+            return Response({"detail": "Une erreur interne est survenue lors du calcul des statistiques."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 @api_view(['GET'])
 @permission_classes([permissions.AllowAny])
@@ -391,7 +493,7 @@ class HistoriqueDemandesView(BaseHistoriqueListView):
         return queryset.order_by('-date_soumission')
 
 
-class UserNotificationsView(ListAPIView):
+class UserNotificationsView(generics.ListAPIView):
     serializer_class = NotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
 

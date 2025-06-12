@@ -11,7 +11,10 @@ const PasswordChangeModal = ({
   showNewPassword, 
   setShowNewPassword, 
   showConfirmPassword, 
-  setShowConfirmPassword 
+  setShowConfirmPassword,
+  loading,
+  error,
+  success
 }) => {
   // Si le modal n'est pas ouvert, ne rien afficher
   if (!isOpen) return null;
@@ -41,6 +44,17 @@ const PasswordChangeModal = ({
         
         {/* Corps du modal */}
         <div className="p-6">
+          {/* Zone pour les messages d'erreur et de succès */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-md text-sm">
+              {success}
+            </div>
+          )}
           {/* Champ mot de passe actuel */}
           <div className="mb-5">
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Mot de passe actuel</label>
@@ -50,13 +64,15 @@ const PasswordChangeModal = ({
                 name="currentPassword"
                 value={passwordData.currentPassword}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-600 focus:border-green-600"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-600 focus:border-green-600 disabled:bg-gray-50"
                 placeholder="Saisissez votre mot de passe actuel"
+                disabled={loading || success}
               />
               <button
                 type="button"
                 className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                disabled={loading || success}
               >
                 {showCurrentPassword ? (
                   <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -81,13 +97,15 @@ const PasswordChangeModal = ({
                 name="newPassword"
                 value={passwordData.newPassword}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-600 focus:border-green-600"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-600 focus:border-green-600 disabled:bg-gray-50"
                 placeholder="Saisissez votre nouveau mot de passe"
+                disabled={loading || success}
               />
               <button
                 type="button"
                 className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 onClick={() => setShowNewPassword(!showNewPassword)}
+                disabled={loading || success}
               >
                 {showNewPassword ? (
                   <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -113,13 +131,15 @@ const PasswordChangeModal = ({
                 name="confirmPassword"
                 value={passwordData.confirmPassword}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-600 focus:border-green-600"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-600 focus:border-green-600 disabled:bg-gray-50"
                 placeholder="Confirmez votre nouveau mot de passe"
+                disabled={loading || success}
               />
               <button
                 type="button"
                 className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                disabled={loading || success}
               >
                 {showConfirmPassword ? (
                   <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -137,14 +157,23 @@ const PasswordChangeModal = ({
           
           {/* Boutons d'action */}
           <div className="flex justify-between mt-2">
-            <button onClick={onClose} className="px-6 py-2.5 border border-gray-300 rounded shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+            <button onClick={onClose} disabled={loading} className="px-6 py-2.5 border border-gray-300 rounded shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50">
               Annuler
             </button>
-            <button onClick={handleSubmit} className="px-6 py-2.5 border border-transparent rounded shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-colors duration-200 flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              Modifier
+            <button onClick={handleSubmit} disabled={loading || success} className={`px-6 py-2.5 border border-transparent rounded shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-colors duration-200 flex items-center justify-center w-32 ${loading || success ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              {loading ? (
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Modifier
+                </>
+              )}
             </button>
           </div>
         </div>

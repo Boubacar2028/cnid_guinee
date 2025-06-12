@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth import get_user_model
 from .models import Citoyen, Agent, Administrateur, ExtraitNaissance, Demande, Paiement, Notification, Document # Ajout de Document
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -16,10 +17,16 @@ class UtilisateurSerializer(serializers.ModelSerializer):
 
 class CitoyenSerializer(serializers.ModelSerializer):
     utilisateur = UtilisateurSerializer()
+    id = serializers.IntegerField(source='pk', read_only=True)
 
     class Meta:
         model = Citoyen
-        fields = '__all__'
+        fields = [
+            'id', 'utilisateur', 'nin', 'date_naissance', 'lieu_naissance',
+            'sexe', 'nationalite', 'adresse', 'profession', 'situation_matrimoniale',
+            'pere_prenom', 'pere_nom', 'mere_prenom', 'mere_nom', 'photo',
+            'taille', 'teint', 'signe_particulier'
+        ]
         # Rendre tous les champs optionnels dans le serializer
         extra_kwargs = {
             'nin': {'required': False},
@@ -30,9 +37,14 @@ class CitoyenSerializer(serializers.ModelSerializer):
             'adresse': {'required': False},
             'profession': {'required': False},
             'situation_matrimoniale': {'required': False},
+            'pere_prenom': {'required': False},
             'pere_nom': {'required': False},
+            'mere_prenom': {'required': False},
             'mere_nom': {'required': False},
-            'photo': {'required': False}
+            'photo': {'required': False},
+            'taille': {'required': False},
+            'teint': {'required': False},
+            'signe_particulier': {'required': False}
         }
 
     def create(self, validated_data):
@@ -193,33 +205,20 @@ class DemandeSerializer(serializers.ModelSerializer):
         model = Demande
         fields = [
             'id',
-            'citoyen', # Remplacer nom_demandeur par l'objet citoyen complet
-            'type_demande', # Valeur brute ex: "premiere_demande"
-            'libelle_type_demande', # ex: "Première demande"
-            'statut', # Valeur brute ex: "en_cours"
-            'libelle_statut', # ex: "En cours de traitement"
-            'date_soumission', # Date brute pour calculs et tri
-            'date_soumission_formatee', # ex: "15/11/2023"
-            'date_traitement', # Date brute de la dernière action de traitement
-            'date_mise_a_jour', # Sera date_traitement ou date_soumission pour affichage "Mis à jour il y a..."
+            'citoyen',
+            'type_demande',
+            'libelle_type_demande',
+            'statut',
+            'libelle_statut',
+            'date_soumission',
+            'date_soumission_formatee',
+            'date_traitement',
+            'date_mise_a_jour',
             'motif_rejet',
-            # Champs spécifiques au formulaire de demande CNI (à adapter selon votre modèle Demande)
-            'nom_sur_cni',
-            'prenom_sur_cni',
-            'date_naissance_sur_cni',
-            'lieu_naissance_sur_cni',
-            'sexe_sur_cni',
-            'taille_sur_cni',
-            'profession_sur_cni',
-            'adresse_residence_sur_cni',
-            'nom_pere_sur_cni',
-            'nom_mere_sur_cni',
-            'numero_extrait_naissance',
-            'photo_fournie', # URL du fichier image
-            'signature_fournie', # URL du fichier image
-            'nombre_documents', # Nombre de documents (méthode)
-            'documents', # Liste des documents sérialisés
-            # 'agent_traitant' # Pourrait être l'ID ou un serializer léger de l'agent
+            'photo_fournie',
+            'signature_fournie',
+            'nombre_documents',
+            'documents',
         ]
         # Ces champs sont soit calculés, soit définis par le système pour l'affichage des demandes.
         read_only_fields = (
@@ -291,34 +290,73 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['email'] = user.email
         token['first_name'] = user.first_name
         token['last_name'] = user.last_name
-        # user_id est déjà inclus par défaut par simplejwt, donc pas besoin de l'ajouter explicitement ici si c'est le cas.
-        # Si user_id n'est pas dans le token par défaut, vous pouvez l'ajouter : token['user_id'] = user.id
         return token
 
     def validate(self, attrs):
-        # Assurons-nous que le username soit bien l'email
         import logging
         logger = logging.getLogger(__name__)
+
+        # La méthode `validate` de la classe parente gère l'authentification
+        data = super().validate(attrs)
         
-        username = attrs.get('username', '')
-        logger.info(f"Tentative d'authentification avec: {username}")
+        # Ajouter les jetons de rafraîchissement et d'accès à la réponse
+        refresh = self.get_token(self.user)
+        data['refresh'] = str(refresh)
+        data['access'] = str(refresh.access_token)
         
-        # Nous laissons le backend d'authentification EmailBackend faire son travail
-        # Ce backend est configuré dans settings.py et recherche l'utilisateur par email
-        try:
-            data = super().validate(attrs)
-            
-            # Ajouter des informations utiles dans la réponse
-            data['username'] = self.user.username
-            data['email'] = self.user.email
-            data['type_utilisateur'] = self.user.type_utilisateur
-            data['user_id'] = self.user.id
-            
-            logger.info(f"Authentification réussie pour: {self.user.email} (Type: {self.user.type_utilisateur})")
-            return data
-        except Exception as e:
-            logger.error(f"Erreur d'authentification: {str(e)}")
-            raise
+        # Ajouter le type d'utilisateur à la réponse principale
+        data['type_utilisateur'] = self.user.type_utilisateur
+
+        # Ajouter les données spécifiques au profil de l'utilisateur
+        user_data = {}
+        if self.user.type_utilisateur == 'agent':
+            try:
+                agent = Agent.objects.get(utilisateur=self.user)
+                user_data = AgentSerializer(agent).data
+            except Agent.DoesNotExist:
+                logger.error(f"Profil agent non trouvé pour l'utilisateur: {self.user.email}")
+                raise serializers.ValidationError("Profil agent non trouvé pour cet utilisateur.")
+        
+        elif self.user.type_utilisateur == 'citoyen':
+            try:
+                citoyen = Citoyen.objects.get(utilisateur=self.user)
+                user_data = CitoyenSerializer(citoyen).data
+            except Citoyen.DoesNotExist:
+                logger.error(f"Profil citoyen non trouvé pour l'utilisateur: {self.user.email}")
+                raise serializers.ValidationError("Profil citoyen non trouvé pour cet utilisateur.")
+
+        elif self.user.type_utilisateur == 'admin':
+            try:
+                admin = Administrateur.objects.get(utilisateur=self.user)
+                user_data = AdministrateurSerializer(admin).data
+            except Administrateur.DoesNotExist:
+                logger.error(f"Profil administrateur non trouvé pour l'utilisateur: {self.user.email}")
+                raise serializers.ValidationError("Profil administrateur non trouvé pour cet utilisateur.")
+        
+        # Fusionner les données de l'utilisateur (qui contiennent 'utilisateur', 'matricule', etc.)
+        # avec la réponse principale.
+        data.update(user_data)
+        
+        # Renommer la clé 'utilisateur' en 'userData' pour correspondre à ce que le frontend attend potentiellement
+        if 'utilisateur' in data:
+            data['userData'] = data.pop('utilisateur')
+
+        logger.info(f"Authentification réussie pour: {self.user.email} (Type: {self.user.type_utilisateur})")
+        return data
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    """
+    Serializer pour le changement de mot de passe.
+    """
+    old_password = serializers.CharField(required=True, write_only=True)
+    new_password = serializers.CharField(required=True, write_only=True, validators=[validate_password])
+    new_password_confirm = serializers.CharField(required=True, write_only=True)
+
+    def validate(self, data):
+        if data['new_password'] != data['new_password_confirm']:
+            raise serializers.ValidationError({"new_password_confirm": "Les deux mots de passe ne correspondent pas."})
+        return data
 
 
 

@@ -1,13 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProfileDropdown from './Modals/ProfileDropdown';
 
 const AgentHeader = ({ onOpenPasswordModal }) => {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const navigate = useNavigate();
+  const [agentData, setAgentData] = useState({
+    name: 'Agent',
+    matricule: '',
+    initials: 'A',
+  });
+
+  useEffect(() => {
+    try {
+      const storedUserData = localStorage.getItem('userData');
+      if (storedUserData) {
+        const parsedData = JSON.parse(storedUserData);
+        // On lit directement depuis l'objet `parsedData` qui est maintenant plat,
+        // et non plus depuis un objet `utilisateur` imbriqué.
+        if (parsedData && parsedData.first_name) {
+          const firstName = parsedData.first_name || '';
+          const lastName = parsedData.last_name || '';
+          const name = `${firstName} ${lastName}`.trim();
+          const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+          
+          setAgentData({
+            name: name,
+            matricule: parsedData.matricule || '',
+            initials: initials,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Erreur lors de la récupération des données de l'agent:", error);
+      // Données de secours en cas d'erreur
+      setAgentData({
+        name: 'Agent',
+        matricule: '',
+        initials: 'A',
+      });
+    }
+  }, []);
   
   const handleLogout = () => {
-    // Logique de déconnexion
+    // Vider le localStorage pour une déconnexion complète
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('userData');
+    localStorage.removeItem('user_type');
     navigate('/');
   };
   
@@ -36,26 +76,17 @@ const AgentHeader = ({ onOpenPasswordModal }) => {
 
           {/* Boutons et profil */}
           <div className="flex items-center space-x-4">
-            <button 
-              onClick={onOpenPasswordModal}
-              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded flex items-center text-sm transition-colors duration-200"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-              </svg>
-              Changer le mot de passe
-            </button>
             <div className="relative">
               <button 
                 onClick={() => setShowProfileDropdown(!showProfileDropdown)} 
                 className="flex items-center focus:outline-none"
               >
                 <div className="h-8 w-8 rounded-full bg-yellow-100 flex items-center justify-center text-red-600 font-medium">
-                  FC
+                  {agentData.initials}
                 </div>
                 <div className="ml-2 text-sm">
-                  <div className="font-medium text-gray-900">Fatounata CAMARA</div>
-                  <div className="text-xs text-gray-500">Matr AG00234</div>
+                  <div className="font-medium text-gray-900">{agentData.name}</div>
+                  <div className="text-xs text-gray-500">Matr {agentData.matricule}</div>
                 </div>
                 <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 ml-1 text-gray-500 transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -67,10 +98,11 @@ const AgentHeader = ({ onOpenPasswordModal }) => {
                 isOpen={showProfileDropdown} 
                 onClose={() => setShowProfileDropdown(false)}
                 onLogout={handleLogout}
+                onOpenPasswordModal={onOpenPasswordModal}
                 userData={{
-                  name: "Fatounata CAMARA",
-                  initials: "FC",
-                  matricule: "AG00234"
+                  name: agentData.name,
+                  initials: agentData.initials,
+                  matricule: agentData.matricule
                 }}
               />
             </div>
